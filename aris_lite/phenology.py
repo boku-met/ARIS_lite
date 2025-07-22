@@ -530,7 +530,7 @@ def main_cli():
     calculations.
 
     Usage:
-        python phenology.py [years ...] [--workers N] [--mem-per-worker SIZE]
+        aris-calc-pheno [years ...] [--workers N] [--mem-per-worker SIZE]
 
     :return: None
     """

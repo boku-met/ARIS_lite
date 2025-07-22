@@ -328,7 +328,7 @@ def main_cli():
     missing data, and manages workflow for snow and soil water calculations.
 
     Usage:
-        python water_budget.py [-m MODE] [years ...] [--workers N]
+        aris-calc-waterbudget [-m MODE] [years ...] [--workers N]
         [--mem-per-worker SIZE]
 
     :return: None

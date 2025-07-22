@@ -227,7 +227,7 @@ def main_cli():
     missing data, and manages workflow for stress and yield calculations.
 
     Usage:
-        python yield_expectation.py [-m MODE] [years ...] [--workers N]
+        aris-calc-yield [-m MODE] [years ...] [--workers N]
         [--mem-per-worker SIZE]
 
     :return: None
