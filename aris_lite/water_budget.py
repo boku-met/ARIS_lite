@@ -119,18 +119,13 @@ def calc_soil_water(ds: xr.Dataset) -> xr.Dataset:
     #     1.875 * ds.Kc_factor - 0.25, 0.2 * ds.pot_evapotransp
     # )
     # below implements the (original) ARIS interception with and without minimum
-    # pot_interc_precip = dask_arr.maximum(
-    #     (0.4 * ds.plant_height / ds.plant_height.max("time")).where(
-    #         ds.time < (
-    #             ds.plant_height.sel(time=slice(None, None, -1)) > 0
-    #         ).idxmax("time"),
-    #         0.1
-    #     ),
-    #     0.2 * ds.pot_evapotransp,
-    # )
-    pot_interc_precip = (0.4 * ds.plant_height / ds.plant_height.max("time")).where(
-        ds.time < (ds.plant_height.sel(time=slice(None, None, -1)) > 0).idxmax("time"),
-        0.1,
+    pot_interc_precip = dask_arr.maximum(
+        (0.4 * ds.plant_height / ds.plant_height.max("time")).where(
+            ds.time
+            < (ds.plant_height.sel(time=slice(None, None, -1)) > 0).idxmax("time"),
+            0.1,
+        ),
+        0.2 * ds.pot_evapotransp,
     )
     liq_precip = ds.precipitation - ds.snowfall
     incoming_water = xr.where(
