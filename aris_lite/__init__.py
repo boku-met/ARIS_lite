@@ -49,7 +49,7 @@ def aris_1go(ds):
         [
             ds,
             compute_phenology_variables(
-                ds.air_temperature,
+                ds.air_temperature.where(~(ds.snowcover > 0)),
                 ["winter wheat", "spring barley", "maize", "grassland"],
             ).persist(),
             # ["wofost potato very early", "wofost potato mid", "wofost potato late"]
