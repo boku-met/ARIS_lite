@@ -48,21 +48,45 @@ def aris_1go(ds):
     ds = xr.merge(
         [
             ds,
-            compute_phenology_variables(
-                ds.air_temperature.where(~(ds.snowcover > 0)),
-                ["winter wheat", "spring barley", "maize", "grassland"],
+            (
+                xr.coding.calendar_ops.convert_calendar(
+                    ds.air_temperature.where(~(ds.snowcover > 0)), "gregorian"
+                )
+                .resample(time="YE")
+                .map(
+                    compute_phenology_variables,
+                    args=(["winter wheat", "spring barley", "maize", "grassland"],),
+                    # args=(["wofost potato very early", "wofost potato mid", "wofost potato late"],),
+                )
+                .map(lambda da: da.astype("float32"))
+                .assign_coords(time=("time", ds.time.data))
             ).persist(),
-            # ["wofost potato very early", "wofost potato mid", "wofost potato late"]
         ]
     )
 
-    ds = xr.merge([ds, calc_soil_water(ds).persist()])
+    ds = xr.merge(
+        [
+            ds,
+            ds.resample(time="YE")
+            .map(calc_soil_water)
+            .assign_coords(time=("time", ds.time.data))
+            .persist(),
+        ]
+    )
     ds = ds.assign(
         waterstress=(ds.soil_depletion * 100 / ds.TAW).mean("layer").persist()
     )
     ds = xr.merge([ds, calc_combined_stress(ds).persist()])
-    ds = xr.merge([ds, calc_yield(ds.combined_stress).persist()])
-    return ds
+    ds = xr.merge(
+        [
+            ds,
+            ds.combined_stress.resample(time="YE")
+            .map(calc_yield)
+            .assign_coords(time=("time", ds.time.data))
+            .persist(),
+        ]
+    )
+    return ds.map(lambda da: da.astype("float32") if da.dtype.kind == "f" else da)
 
 
 def cli():
