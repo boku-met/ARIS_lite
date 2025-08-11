@@ -35,6 +35,14 @@ def aris_1go(ds):
     from aris_lite.phenology import compute_phenology_variables
     from aris_lite.yield_expectation import calc_combined_stress, calc_yield
 
+    def _load_resample_apply(ds, func, *args, **kwargs):
+        return (
+            ds.load()
+            .resample(time="YE")
+            .map(func, args=args, **kwargs)
+            .assign_coords(time=("time", ds.time.data))
+        )
+
     ds = xr.merge(
         [
             ds,
@@ -51,25 +59,31 @@ def aris_1go(ds):
             (
                 xr.coding.calendar_ops.convert_calendar(
                     ds.air_temperature.where(~(ds.snowcover > 0)), "gregorian"
-                )
-                .resample(time="YE")
-                .map(
+                ).pipe(
+                    _load_resample_apply,
                     compute_phenology_variables,
-                    args=(["winter wheat", "spring barley", "maize", "grassland"],),
-                    # args=(["wofost potato very early", "wofost potato mid", "wofost potato late"],),
+                    ["winter wheat", "spring barley", "maize", "grassland"],
+                    # ["wofost potato very early", "wofost potato mid", "wofost potato late"],  # noqa: E501
                 )
-                .map(lambda da: da.astype("float32"))
-                .assign_coords(time=("time", ds.time.data))
             ).persist(),
         ]
     )
-
     ds = xr.merge(
         [
             ds,
-            ds.resample(time="YE")
-            .map(calc_soil_water)
-            .assign_coords(time=("time", ds.time.data))
+            ds.map_blocks(
+                _load_resample_apply,
+                args=(calc_soil_water,),
+                template=xr.Dataset(
+                    {
+                        var: xr.zeros_like(ds.Kc_factor.broadcast_like(ds.TAW))
+                        .transpose(*ds.Kc_factor.dims, ...)
+                        .chunk(ds.chunks)
+                        for var in ["evapotranspiration", "evapo_ETC", "soil_depletion"]
+                    }
+                ),
+            )
+            .chunk(ds.chunks)
             .persist(),
         ]
     )
@@ -80,9 +94,7 @@ def aris_1go(ds):
     ds = xr.merge(
         [
             ds,
-            ds.combined_stress.resample(time="YE")
-            .map(calc_yield)
-            .assign_coords(time=("time", ds.time.data))
+            ds.combined_stress.pipe(_load_resample_apply, calc_yield)
             .persist(),
         ]
     )
