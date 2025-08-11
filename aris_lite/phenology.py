@@ -229,28 +229,27 @@ def compute_phenology_variables(
     )
     out_season = Kc_condition_atom(operator.ge, pd.Timestamp(month=12, day=1, year=999))
 
-    cumT_5 = conditional_cumulative_temperature(
-        temperature, start_month=3, threshold=5, timesteps_above_threshold=5
-    )
-    cumT_8 = conditional_cumulative_temperature(
-        temperature, start_month=4, threshold=8, timesteps_above_threshold=5
-    )
-
     Kc_factor_da_list = []
     plant_height_da_list = []
     for crop in crops:
         if crop == "winter wheat":
             mid_season_start_cumT = 350
             mid_season_end_cumT = mid_season_start_cumT + 692
-            cumT = cumT_5
+            cumT = conditional_cumulative_temperature(
+                temperature, start_month=3, threshold=5, timesteps_above_threshold=5
+            )
         elif crop == "spring barley":
             mid_season_start_cumT = 502
             mid_season_end_cumT = mid_season_start_cumT + 568
-            cumT = cumT_5
+            cumT = conditional_cumulative_temperature(
+                temperature, start_month=3, threshold=5, timesteps_above_threshold=5
+            )
         elif crop == "maize":
             mid_season_start_cumT = 249
             mid_season_end_cumT = mid_season_start_cumT + 1238
-            cumT = cumT_8
+            cumT = conditional_cumulative_temperature(
+                temperature, start_month=4, threshold=8, timesteps_above_threshold=5
+            )
         elif crop.startswith("wofost potato"):
             Kc_mid_val = 1.0
             cumT = (
@@ -285,29 +284,48 @@ def compute_phenology_variables(
             #   1) 2-cuts require a warmer year than 3-cuts but are only applied in
             #      colder years
             #   2) all cut strategies only differ slightly in their end temperature sums
-            Kc_out_val = 0.2
             Kc_ini_val = 0.4
+            Kc_mid_val = 1.2
+            Kc_end_val = 0.9
+            Kc_out_val = 0.4
+            # plH_ini_val = 0
+            plH_mid_val = 0.7
+            plH_end_val = 0.2
+            plH_out_val = 0
             # because the defined thresholds result in no grassland at all, I use
             # imaginary values for testing
-            # cumTs = [np.cumsum(thresholds) for thresholds in [
-            #     [1170, 1900],
-            #     [770, 1020, 1260],
-            #     [630, 710, 910, 850]
-            # ]]
             cumTs = [
                 np.cumsum(thresholds)
-                for thresholds in [[870, 800], [770, 820, 860], [630, 710, 710, 750]]
+                for thresholds in [
+                    [1170, 1900],  # = 3070
+                    # [770, 1020, 1260],  # = 3050
+                    [630, 710, 910, 850],  # = 3100
+                ]
             ]
+            # cumTs = [
+            #     np.cumsum(thresholds)
+            #     for thresholds in [[910, 850], [770, 910, 850], [630, 710, 910, 850]]
+            # ]
+            cumT = conditional_cumulative_temperature(
+                temperature, start_month=3, threshold=0, timesteps_above_threshold=5
+            )
+            before_out_season = Kc_condition_atom(
+                operator.lt, pd.Timestamp(month=11, day=1, year=999)
+            )
+            out_season = Kc_condition_atom(
+                operator.ge, pd.Timestamp(month=11, day=1, year=999)
+            )
             group_output_collector = []
             group_output_collector2 = []
             try:
                 for (
                     _,
                     group,
-                ) in cumT_5.groupby_bins(  # FIXME wrap in .map_blocks if chunked
-                    cumT_5.sel(time=f"{cumT_5.time[0].dt.year.values}-11-30"),
+                ) in cumT.groupby_bins(  # FIXME wrap in .map_blocks if chunked
+                    cumT.sel(time=f"{cumT.time[0].dt.year.values}-10-31"),
                     [sublist[-1] for sublist in cumTs] + [99999],
                 ):
+                    # init list to define stages dynamically
                     Kc_factor_periods = [
                         (before_growing_season, Kc_ini_val),
                         (
@@ -317,28 +335,51 @@ def compute_phenology_variables(
                             Kc_out_val,
                         ),
                     ]
+                    plant_height_periods = [
+                        (before_growing_season, Kc_ini_val),
+                        (
+                            Kc_condition_atom(
+                                operator.lt, pd.Timestamp(month=3, day=1, year=999)
+                            ),
+                            plH_out_val,
+                        ),
+                    ]
+                    # cycle through threshold values
                     for cumT_threshold in cumTs.pop(0):
+                        # raise Exception(f"{cumT_threshold}")
                         tmp_EGS = group[
                             (group < cumT_threshold).argmin("time").compute()
                         ].time
                         Kc_factor_periods.extend(
                             [
-                                (Kc_condition_atom(operator.eq, tmp_EGS), 1.2),
+                                (Kc_condition_atom(operator.eq, tmp_EGS), Kc_mid_val),
                                 (
                                     Kc_condition_atom(
                                         operator.eq, tmp_EGS + pd.Timedelta(days=1)
                                     ),
-                                    0.4,
+                                    Kc_ini_val,
                                 ),
                             ]
                         )
+                        plant_height_periods.extend(
+                            [
+                                (Kc_condition_atom(operator.eq, tmp_EGS), plH_mid_val),
+                                (
+                                    Kc_condition_atom(
+                                        operator.eq, tmp_EGS + pd.Timedelta(days=1)
+                                    ),
+                                    plH_end_val,
+                                ),
+                            ]
+                        )
+                    # set end state
                     Kc_factor_periods.extend(
                         [
                             (
                                 Kc_condition_atom(
                                     operator.ge, tmp_EGS + pd.Timedelta(days=1)
                                 ),
-                                0.4,
+                                Kc_end_val,
                             ),
                             (out_season, Kc_out_val),
                         ]
@@ -346,7 +387,7 @@ def compute_phenology_variables(
                     group_output_collector.append(
                         build_Kc_factor_array(Kc_factor_periods, group)
                     )
-                    end_season = Kc_condition(
+                    end_season = Kc_condition(  # ? what did this do again?
                         [
                             Kc_condition_atom(
                                 operator.ge, tmp_EGS + pd.Timedelta(days=1)
@@ -354,14 +395,26 @@ def compute_phenology_variables(
                             before_out_season,
                         ]
                     )
+                    plant_height_periods.extend(
+                        [
+                            (
+                                Kc_condition_atom(
+                                    operator.ge, tmp_EGS + pd.Timedelta(days=1)
+                                ),
+                                plH_end_val,
+                            ),
+                            (out_season, plH_out_val),
+                        ]
+                    )
                     group_output_collector2.append(
-                        build_plant_height_array([(end_season, 0.2)], group)
+                        build_plant_height_array(plant_height_periods, group)
                     )
                 Kc_factor_da_list.append(
                     xr.concat(group_output_collector, group_output_collector[0].dims[1])
                     .sortby(group_output_collector[0].dims[1])
                     .unstack()
-                    .reindex_like(cumT_5)
+                    .reindex_like(cumT)
+                    .assign_coords({coord: vals for coord, vals in cumT.coords.items()})
                     .rename(crop.replace(" ", "_"))
                 )
                 plant_height_da_list.append(
@@ -370,7 +423,8 @@ def compute_phenology_variables(
                     )
                     .sortby(group_output_collector[0].dims[1])
                     .unstack()
-                    .reindex_like(cumT_5)
+                    .reindex_like(cumT)
+                    .assign_coords({coord: vals for coord, vals in cumT.coords.items()})
                     .rename(crop.replace(" ", "_"))
                 )
             except ValueError as err:
@@ -378,10 +432,10 @@ def compute_phenology_variables(
                     for da_list in [Kc_factor_da_list, plant_height_da_list]:
                         if da_list[-1].name != "grassland":
                             da_list.append(
-                        xr.DataArray(np.nan, coords=cumT_5.coords).rename(
-                            crop.replace(" ", "_")
-                        )
-                    )
+                                xr.DataArray(np.nan, coords=cumT.coords).rename(
+                                    crop.replace(" ", "_")
+                                )
+                            )
                 else:
                     raise err
             continue
@@ -467,8 +521,6 @@ def compute_phenology_variables(
         .rename("plant_height")
     )
     out = xr.merge([Kc_factor_da_list, plant_height_da_list])
-    # print(out, flush=True)
-    # raise
     return out
 
 
