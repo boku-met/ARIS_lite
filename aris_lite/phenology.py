@@ -375,20 +375,16 @@ def compute_phenology_variables(
                 )
             except ValueError as err:
                 if str(err).startswith("None of the data falls within bins with edges"):
-                    Kc_factor_da_list.append(
-                        xr.DataArray(np.nan, coords=cumT_5.coords).rename(
-                            crop.replace(" ", "_")
-                        )
-                    )
-                    plant_height_da_list.append(
+                    for da_list in [Kc_factor_da_list, plant_height_da_list]:
+                        if da_list[-1].name != "grassland":
+                            da_list.append(
                         xr.DataArray(np.nan, coords=cumT_5.coords).rename(
                             crop.replace(" ", "_")
                         )
                     )
                 else:
                     raise err
-            finally:
-                continue
+            continue
         else:
             print(
                 f"! WARNING: requested crop {crop} was not recognized and is skipped."
