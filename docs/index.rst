@@ -9,15 +9,23 @@ ARIS_lite is a Python framework designed to compute plant stress indicators from
 - Processing meteorological input data
 - Modeling soil water balance
 - Calculating various plant stress indicators
-- Integrating with Sphinx documentation
+
+.. image:: Yield_image.png
+   :width: 80pt
+   :alt: Picture of examplary yield reduction
 
 Key Features
 ------------
 
 - Modular architecture for easy extension
-- Comprehensive documentation generation
-- Integration with scientific workflows
 - Extensible for different plant types and environments
+
+Key Limitations
+---------------
+
+- Strict requirements on usage (users need to follow the intended usage,
+  including data format, directory structure, and variable names)
+- Limited set of crops implemented
 
 Getting Started
 ---------------

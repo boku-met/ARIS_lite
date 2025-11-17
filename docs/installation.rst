@@ -10,9 +10,9 @@ been tested with Python 3.13.
 Installation
 ------------
 
-Using uv (recommended):
+*Using uv (recommended)*:
 
-- set up a project directory, open a terminal, and
+Set up a project directory, open a terminal, and do
 
 .. code-block:: shell
 
@@ -20,16 +20,16 @@ Using uv (recommended):
    source .venv/bin/activate
    uv pip install git+https://github.com/j-haacker/ARIS_lite.git
 
-Advantage:
+Advantages:
 
-- does not rely on the system Python
-- does not stuff your system
-- it is fast
+- Does not rely on the system Python.
+- Does not stuff your system.
+- It is fast.
 
-Using pip (alternative):
+*Using pip (alternative)*:
 
 .. code-block:: shell
-   
+
    pip install git+https://github.com/j-haacker/ARIS_lite.git
 
 Dependencies
@@ -37,12 +37,12 @@ Dependencies
 
 ARIS_lite requires the following packages:
 
-- dask[complete]
-- numpy
-- pandas
-- snowmaus
-- xarray[accel,io,parallel]
-- zarr>=3
+- ``dask[complete]``
+- ``numpy``
+- ``pandas``
+- ``snowmaus``
+- ``xarray[accel,io,parallel]``
+- ``zarr>=3``
 
 These dependencies will be automatically installed when you use one of
 the above.
