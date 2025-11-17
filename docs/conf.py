@@ -81,7 +81,7 @@ html_theme_options = {
         },
     ],
     "icon": {
-        "logo": "fontawesome/wheat-awn",
+        # "logo": "fontawesome/wheat-awn",
         "repo": "fontawesome/brands/github",
     },
 }
