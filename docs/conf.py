@@ -53,6 +53,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 html_theme = "sphinx_immaterial"
 html_static_path = ["_static"]
 html_theme_options = {
+    "repo_url": "https://github.com/boku-met/ARIS_lite",
     "palette": [
         {
             "media": "(prefers-color-scheme)",
@@ -78,7 +79,7 @@ html_theme_options = {
                 "name": "Switch to system preference",
             },
         },
-    ]
+    ],
 }
 
 # sys.path.insert(0, str(Path("..").resolve()))
