@@ -11,7 +11,7 @@ ARIS_lite is a Python framework designed to compute plant stress indicators from
 - Calculating various plant stress indicators
 
 .. image:: Yield_image.png
-   :width: 80pt
+   :width: 720px
    :alt: Picture of examplary yield reduction
 
 Key Features
