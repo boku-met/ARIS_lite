@@ -72,6 +72,10 @@ html_theme_options = {
             },
         },
     ],
+    "icon": {
+        "logo": "fontawesome/regular/wheat-awn",
+        "repo": "fontawesome/brands/github",
+    },
 }
 
 # sys.path.insert(0, str(Path("..").resolve()))

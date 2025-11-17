@@ -36,7 +36,3 @@ For detailed technical documentation, see the API documentation:
    :maxdepth: 1
 
    aris_lite
-
--------
-
-Find the `code on GitHub <https://github.com/j-haacker/ARIS_lite_>`_.
