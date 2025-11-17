@@ -4,7 +4,7 @@ This package provides functions for simulating crop phenology, water budget, and
 expectation using environmental and crop-specific data.
 """
 
-__version__ = "0.1.0.dev2"
+__version__ = "0.2.0.dev0"
 
 __all__ = [
     "aris_1go",
@@ -14,10 +14,24 @@ __all__ = [
     "yield_expectation",
 ]
 
+from typing import Literal
 import xarray as xr
 
+T_crop_names = Literal[
+    "winter wheat",
+    "spring barley",
+    "maize",
+    "grassland",
+    "wofost potato very early",
+    "wofost potato mid",
+    "wofost potato late",
+]
 
-def aris_1go(ds):
+
+def aris_1go(
+    ds: xr.Dataset,
+    crops: list[T_crop_names],
+):
     """
     Run the full ARIS-lite workflow on a single dataset.
 
@@ -62,8 +76,7 @@ def aris_1go(ds):
                 ).pipe(
                     _load_resample_apply,
                     compute_phenology_variables,
-                    ["winter wheat", "spring barley", "maize", "grassland"],
-                    # ["wofost potato very early", "wofost potato mid", "wofost potato late"],  # noqa: E501
+                    crops,
                 )
             ).persist(),
         ]
@@ -94,8 +107,7 @@ def aris_1go(ds):
     ds = xr.merge(
         [
             ds,
-            ds.combined_stress.pipe(_load_resample_apply, calc_yield)
-            .persist(),
+            ds.combined_stress.pipe(_load_resample_apply, calc_yield).persist(),
         ]
     )
     return ds.map(lambda da: da.astype("float32") if da.dtype.kind == "f" else da)

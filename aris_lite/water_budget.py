@@ -98,7 +98,7 @@ def calc_soil_water(ds: xr.Dataset) -> xr.Dataset:
             dask_arr.zeros(
                 shape=(*ds.Kc_factor.shape, 2),
                 dtype="float",
-                chunks=(-1, -1, 37, 41, 2),
+                chunks=(-1, -1, 37, 41, -1) if ds.Kc_factor.chunks else -1,
             ),
             dims=[*ds.Kc_factor.dims, "layer"],
             coords={
@@ -182,7 +182,9 @@ def calc_soil_water(ds: xr.Dataset) -> xr.Dataset:
         )
         p = (p_T + (0.04 * (5 - ETC.sel(time=t)))).clip(p__lower_lim, p__upper_lim)
         Ks_i = ((1 - D_r.isel(time=i - 1) / ds.TAW).values / (1 - p)).clip(0, 1)
-        ET[:, i] = Ks_i * ET0.sel(time=t) * Kc_plus_climEff.sel(time=t)
+        ET[:, i] = (
+            ET0.sel(time=t) * Kc_plus_climEff.sel(time=t) * Ks_i
+        )  # Ks_i has to be multiplied after Kc_... because of coord precedence
         top_shortage = (  # water in top layer before surplus is released
             D_r.isel(time=i - 1).squeeze().sel(layer="top")
             + ET.sel(time=t, layer="top")

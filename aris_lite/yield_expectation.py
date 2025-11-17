@@ -174,9 +174,17 @@ def calc_yield(csi: xr.DataArray) -> xr.DataArray:
         [6.64, 5.11, 10.99, 87.53],
         coords={"crop": ["winter wheat", "spring barley", "maize", "grassland"]},
     )
-    locally_estimated_yield_depression = xr.zeros_like(locally_estimated_max_yield) + [0.000084, 0.0002, 0.0005, 0.0055]
+    locally_estimated_yield_depression = xr.zeros_like(locally_estimated_max_yield) + [
+        0.000084,
+        0.0002,
+        0.0005,
+        0.0055,
+    ]
     yield_depression = (
-        100 * locally_estimated_yield_depression / locally_estimated_max_yield * csi.cumsum("time")
+        100
+        * locally_estimated_yield_depression
+        / locally_estimated_max_yield
+        * csi.cumsum("time")
     ).clip(max=100)
     return set_yield_meta(yield_depression.transpose(*csi.dims))
 
