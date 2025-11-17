@@ -57,10 +57,10 @@ html_theme_options = {
     "palette": [
         {
             "media": "(prefers-color-scheme)",
-            "scheme": "default",
+            "scheme": "slate",
             "toggle": {
-                "icon": "material/brightness-auto",
-                "name": "Switch to dark mode",
+                "icon": "material/weather-sunny",
+                "name": "Switch to light mode",
             },
         },
         {
@@ -75,13 +75,13 @@ html_theme_options = {
             "media": "(prefers-color-scheme: dark)",
             "scheme": "slate",
             "toggle": {
-                "icon": "material/weather-sunny",
+                "icon": "material/brightness-auto",
                 "name": "Switch to system preference",
             },
         },
     ],
     "icon": {
-        # "logo": "fontawesome/wheat-awn",
+        "logo": "material/sprout",
         "repo": "fontawesome/brands/github",
     },
 }
