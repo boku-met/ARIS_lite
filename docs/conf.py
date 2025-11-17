@@ -55,10 +55,10 @@ html_static_path = ["_static"]
 html_theme_options = {
     "repo_url": "https://github.com/boku-met/ARIS_lite",
     "palette": [
-        {"primary": "orange"},
         {
             "media": "(prefers-color-scheme)",
             "scheme": "slate",
+            "primary": "deep-orange",
             "toggle": {
                 "icon": "material/weather-sunny",
                 "name": "Switch to light mode",
@@ -67,6 +67,7 @@ html_theme_options = {
         {
             "media": "(prefers-color-scheme: light)",
             "scheme": "default",
+            "primary": "orange",
             "toggle": {
                 "icon": "material/weather-night",
                 "name": "Switch to dark mode",
@@ -75,6 +76,7 @@ html_theme_options = {
         {
             "media": "(prefers-color-scheme: dark)",
             "scheme": "slate",
+            "primary": "deep-orange",
             "toggle": {
                 "icon": "material/weather-sunny",
                 "name": "Switch to light mode",
