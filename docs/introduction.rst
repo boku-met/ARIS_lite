@@ -1,18 +1,16 @@
-Welcome to ARIS_lite's Documentation!
-=====================================
+ARIS_lite: Plant Drought and Heat Stress Model
+==============================================
 
 Overview
 --------
 
-ARIS_lite is a Python framework designed to compute plant stress indicators from meteorological data and model soil water balance. The package provides tools for:
+ARIS_lite is a Python framework designed to compute plant stress
+indicators from modeling the soil water balance using meteorological
+input data. The package provides tools for:
 
 - Processing meteorological input data
 - Modeling soil water balance
 - Calculating various plant stress indicators
-
-.. image:: Yield_image.png
-   :width: 720px
-   :alt: Picture of examplary yield reduction
 
 Key Features
 ------------
@@ -20,12 +18,11 @@ Key Features
 - Modular architecture for easy extension
 - Extensible for different plant types and environments
 
-Key Limitations
+Key limitations
 ---------------
 
-- Strict requirements on usage (users need to follow the intended usage,
-  including data format, directory structure, and variable names)
-- Limited set of crops implemented
+- Strict requirements, e.g., on the format of input data
+- Limited set of crops and stress indicators
 
 Getting Started
 ---------------

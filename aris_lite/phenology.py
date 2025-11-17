@@ -472,6 +472,15 @@ def compute_phenology_variables(
                             (out_season, plH_out_val),
                         ]
                     )
+                    plant_height_periods.extend(
+                        [
+                            (
+                                cond_after_cut,
+                                plH_end_val,
+                            ),
+                            (out_season, plH_out_val),
+                        ]
+                    )
                     group_output_collector2.append(
                         build_plant_height_array(
                             plant_height_periods,
