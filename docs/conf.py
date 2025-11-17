@@ -58,7 +58,8 @@ html_theme_options = {
         {
             "media": "(prefers-color-scheme)",
             "scheme": "slate",
-            "primary": "deep-orange",
+            "primary": "orange",
+            "accent": "teal",
             "toggle": {
                 "icon": "material/weather-sunny",
                 "name": "Switch to light mode",
@@ -68,6 +69,7 @@ html_theme_options = {
             "media": "(prefers-color-scheme: light)",
             "scheme": "default",
             "primary": "orange",
+            "accent": "teal",
             "toggle": {
                 "icon": "material/weather-night",
                 "name": "Switch to dark mode",
@@ -76,7 +78,8 @@ html_theme_options = {
         {
             "media": "(prefers-color-scheme: dark)",
             "scheme": "slate",
-            "primary": "deep-orange",
+            "primary": "orange",
+            "accent": "teal",
             "toggle": {
                 "icon": "material/weather-sunny",
                 "name": "Switch to light mode",
