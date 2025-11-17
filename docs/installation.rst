@@ -15,6 +15,7 @@ Using uv (recommended):
 - set up a project directory, open a terminal, and
 
 .. code-block:: shell
+
    uv venv
    source .venv/bin/activate
    uv pip install git+https://github.com/j-haacker/ARIS_lite.git
@@ -28,6 +29,7 @@ Advantage:
 Using pip (alternative):
 
 .. code-block:: shell
+   
    pip install git+https://github.com/j-haacker/ARIS_lite.git
 
 Dependencies
