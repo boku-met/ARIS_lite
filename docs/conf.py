@@ -57,6 +57,14 @@ html_theme_options = {
     "palette": [
         {"primary": "orange"},
         {
+            "media": "(prefers-color-scheme)",
+            "scheme": "slate",
+            "toggle": {
+                "icon": "material/weather-sunny",
+                "name": "Switch to light mode",
+            },
+        },
+        {
             "media": "(prefers-color-scheme: light)",
             "scheme": "default",
             "toggle": {
