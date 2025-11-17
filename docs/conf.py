@@ -56,6 +56,14 @@ html_theme_options = {
     "repo_url": "https://github.com/boku-met/ARIS_lite",
     "palette": [
         {
+            "media": "(prefers-color-scheme)",
+            "scheme": "default",
+            "toggle": {
+                "icon": "material/brightness-auto",
+                "name": "Switch to dark mode",
+            },
+        },
+        {
             "media": "(prefers-color-scheme: light)",
             "scheme": "default",
             "toggle": {
@@ -73,7 +81,7 @@ html_theme_options = {
         },
     ],
     "icon": {
-        "logo": "fontawesome/regular/wheat-awn",
+        "logo": "fontawesome/wheat-awn",
         "repo": "fontawesome/brands/github",
     },
 }
