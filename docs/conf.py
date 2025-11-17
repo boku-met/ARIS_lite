@@ -52,6 +52,34 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "sphinx_immaterial"
 html_static_path = ["_static"]
+html_theme_options = {
+    "palette": [
+        {
+            "media": "(prefers-color-scheme)",
+            "scheme": "default",
+            "toggle": {
+                "icon": "material/toggle-switch",
+                "name": "Switch to light mode",
+            },
+        },
+        {
+            "media": "(prefers-color-scheme: light)",
+            "scheme": "default",
+            "toggle": {
+                "icon": "material/toggle-switch",
+                "name": "Switch to dark mode",
+            },
+        },
+        {
+            "media": "(prefers-color-scheme: dark)",
+            "scheme": "slate",
+            "toggle": {
+                "icon": "material/toggle-switch-off-outline",
+                "name": "Switch to system preference",
+            },
+        },
+    ]
+}
 
 # sys.path.insert(0, str(Path("..").resolve()))
 sys.path.insert(0, str(Path("..", "aris_lite").resolve()))
