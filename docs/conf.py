@@ -5,7 +5,6 @@
 
 import sys
 from pathlib import Path
-from subprocess import run as subprun
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -25,7 +24,7 @@ author = "Jan Haacker"
 # )
 # # print(version)
 # git_hash = (
-#     subprun(f"git rev-list -n 1 {version}", shell=True, check=True, capture_output=True)
+#     subprun(f"git rev-list -n 1 {version}", shell=True, check=True, capture_output=True)  # noqa: E501
 #     .stdout.decode()
 #     .strip()
 # )
@@ -39,6 +38,7 @@ extensions = [
     "sphinx.ext.githubpages",
     "sphinx.ext.viewcode",
     "myst_parser",
+    "sphinx_immaterial",
     # "sphinx.ext.linkcode",
     # 'sphinx.ext.napoleon',
 ]
@@ -50,7 +50,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "sphinx_rtd_theme"
+html_theme = "sphinx_immaterial"
 html_static_path = ["_static"]
 
 # sys.path.insert(0, str(Path("..").resolve()))
