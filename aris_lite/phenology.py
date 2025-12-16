@@ -396,12 +396,12 @@ def compute_phenology_variables(
                 ):
                     before_growing_season = Kc_condition_atom(
                         operator.lt,
-                        cumT[(cumT == 0).argmin("time").compute()].time.dt.dayofyear,
+                        group[(group == 0).argmin("time").compute()].time.dt.dayofyear,
                     )
                     before_march_first = Kc_condition_atom(
                         operator.lt,
-                        cumT[:, 0]
-                        .sel(time=f"{cumT.time.dt.year.item(0)}-03-01")
+                        group[:, 0]
+                        .sel(time=f"{group.time.dt.year.item(0)}-03-01")
                         .time.dt.dayofyear.item(0),
                     )
                     # init list to define stages dynamically
@@ -419,7 +419,7 @@ def compute_phenology_variables(
                     ):
                         lower_fraction_limit = 0.5 if mid < 170 else 0.4
                         T_sum_ratio = (
-                            group.where(cumT.time.dt.dayofyear == mid).sum("time")
+                            group.where(group.time.dt.dayofyear == mid).sum("time")
                             / T_threshold
                         ).clip(lower_fraction_limit, 2)
                         cut_doy = xr.where(
@@ -449,7 +449,7 @@ def compute_phenology_variables(
                             ]
                         )
                         group = group - group.where(
-                            cumT.time.dt.dayofyear == cut_doy - 1
+                            group.time.dt.dayofyear == cut_doy - 1
                         ).sum("time")
                     # set end state
                     # `ge` to match the original ARIS should be `gt`
