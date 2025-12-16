@@ -237,21 +237,10 @@ def compute_phenology_variables(
     Notes
     -----
     The current implementation draws on the three references below
-    (basic idea: [1], parameters and specifications: [2], grass cut
-    days: [3]).
-    [1] Allen, R. G. (Ed.). (2000). Crop evapotranspiration: Guidelines
-        for computing crop water requirements (repr). Food and
-        Agriculture Organization of the United Nations.
-    [2] Eitzinger, J., Daneu, V., Kubu, G., Thaler, S., Trnka, M.,
-        Schaumberger, A., Schneider, S., & Tran, T. M. A. (2024). Grid
-        based monitoring and forecasting system of cropping conditions
-        and risks by agrometeorological indicators in Austria –
-        Agricultural Risk Information System ARIS. Climate Services, 34,
-        100478. https://doi.org/10.1016/j.cliser.2024.100478
-    [3] Schaumberger, A. (2011). Räumliche Modelle zur Vegetations- und
-        Ertragsdynamik im Wirtschaftsgrünland [Dissertation, Graz
-        University of Technology].
-        https://repository.tugraz.at/publications/npc97-y3058.
+    (basic idea: :cite:`allen2000`, parameters and specifications:
+    :cite:`eitzinger2024`, grass cut days: :cite:`schaumberger2011`).
+
+    .. bibliography::
     """
     # all of winter wheat, spring barley, grain maize, potato, soybeans and
     # grassland (mähwiese) need to be included

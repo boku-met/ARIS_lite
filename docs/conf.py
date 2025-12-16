@@ -10,7 +10,7 @@ from pathlib import Path
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "ARIS_lite"
-copyright = "2024, Jan Haacker"
+copyright = "2024-2025, Jan Haacker"
 author = "Jan Haacker"
 # version = (
 #     subprun(
@@ -39,9 +39,11 @@ extensions = [
     "sphinx.ext.viewcode",
     "myst_parser",
     "sphinx_immaterial",
+    "sphinxcontrib.bibtex",
     # "sphinx.ext.linkcode",
     # 'sphinx.ext.napoleon',
 ]
+bibtex_bibfiles = ["refs.bib"]
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
