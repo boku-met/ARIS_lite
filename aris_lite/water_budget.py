@@ -167,13 +167,15 @@ def calc_soil_water(ds: xr.Dataset) -> xr.Dataset:
         i = np.argwhere(t == incoming_water.time.values).flatten()[0]
         p__lower_lim, p__upper_lim = 0.1, 0.8
         p_T = xr.DataArray(
-            [0.55, 0.55, 0.55, 0.6, 0.35, 0.35, 0.35],
+            [0.55, 0.55, 0.55, 0.5, 0.6, 0.35, 0.35, 0.35, 0.35],
             coords={
                 "crop": [
                     "winter wheat",
                     "spring barley",
                     "maize",
+                    "soybean",
                     "grassland",
+                    "norm potato",
                     "wofost potato very early",
                     "wofost potato mid",
                     "wofost potato late",
