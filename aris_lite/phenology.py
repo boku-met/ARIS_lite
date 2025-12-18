@@ -516,25 +516,20 @@ def compute_phenology_variables(
                         raise err
                 continue
             else:
+                if grass_cut_mask.isnull().all():
+                    for da_list in [Kc_factor_da_list, plant_height_da_list]:
+                        da_list.append(
+                            xr.DataArray(np.nan, coords=temperature.coords).rename(
+                                crop.replace(" ", "_")
+                            )
+                        )
+                    continue
+                cumT = temperature.clip(min=0).cumsum("time")
                 cumTs = [
                     [133, 1921, 3056],
                     [107, 1135, 1117, 985],
                     [96, 1024, 1032, 901, 713, 571, 209],
                 ]
-                cumT = conditional_cumulative_temperature(
-                    temperature,
-                    start_month=3,
-                    basis_temperature=0,
-                    start_growing_season=(5, 5),
-                )
-                if grass_cut_mask.isnull().all():
-                    for da_list in [Kc_factor_da_list, plant_height_da_list]:
-                        da_list.append(
-                            xr.DataArray(np.nan, coords=cumT.coords).rename(
-                                crop.replace(" ", "_")
-                            )
-                        )
-                    continue
                 # Kc and plant height values
                 Kc_ini_val = 0.4
                 Kc_mid_val = 1.2
@@ -586,7 +581,7 @@ def compute_phenology_variables(
                                 ]
                             )
                         # set end state
-                        cond_after_cut = Kc_condition_atom(operator.ge, next_day)
+                        cond_after_cut = Kc_condition_atom(operator.ge, next_day)  # pyright: ignore[reportPossiblyUnboundVariable]
                         Kc_factor_periods.extend(
                             [
                                 (cond_after_cut, Kc_end_val),
@@ -595,7 +590,7 @@ def compute_phenology_variables(
                         )
                         group_output_collector.append(
                             build_Kc_factor_array(
-                                Kc_factor_periods,
+                                Kc_factor_periods,  # pyright: ignore[reportArgumentType]
                                 group,
                             )
                         )
@@ -607,7 +602,7 @@ def compute_phenology_variables(
                         )
                         group_output_collector2.append(
                             build_plant_height_array(
-                                plant_height_periods,
+                                plant_height_periods,  # pyright: ignore[reportArgumentType]
                                 group.time.dt.dayofyear.broadcast_like(group),
                             )
                         )
