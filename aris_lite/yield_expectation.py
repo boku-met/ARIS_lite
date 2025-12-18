@@ -69,7 +69,7 @@ def calc_combined_stress(ds: xr.Dataset, threshold_temperature=None) -> xr.DataA
                 ds.waterstress[i] * (ds.max_air_temp - 25),
                 ds.waterstress[i],
             )
-        if combined_stress[i].crop in ["spring barley", "maize"]:
+        if combined_stress[i].crop in ["spring barley", "maize", "soybean"]:
             combined_stress[i] = xr.where(
                 np.logical_and(ds.max_air_temp > 30, ds.waterstress[i] > 33),
                 (ds.waterstress[i] * (ds.max_air_temp - 29)) - 33,
@@ -86,7 +86,7 @@ def calc_combined_stress(ds: xr.Dataset, threshold_temperature=None) -> xr.DataA
             ).where(ds.time.dt.month >= 4)  # actually 15.4. shouldn't matter
         if combined_stress[i].crop == "grassland":
             combined_stress[i] = ds.waterstress[i]
-        if combined_stress[i].crop in ["winter wheat", "spring barley"]:
+        if combined_stress[i].crop in ["winter wheat", "spring barley", "soybean"]:
             combined_stress[i] = combined_stress[i].where(ds.time.dt.month >= 3)
         if "potato" in combined_stress[i].crop.item(0):
             combined_stress[i] = combined_stress[i].where(ds.time.dt.month >= 4)
