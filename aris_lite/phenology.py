@@ -254,7 +254,6 @@ def compute_phenology_variables(
     Kc_end_val = 0.5
     Kc_out_val = 0.4
 
-    before_growing_season = Kc_condition_atom(operator.eq, 0)
     before_out_season = Kc_condition_atom(
         operator.lt, pd.Timestamp(month=12, day=1, year=999)
     )
@@ -305,18 +304,15 @@ def compute_phenology_variables(
                 )
                 .cumsum("time")
             )
-            before_growing_season_cumT = 170
-            before_growing_season = Kc_condition_atom(
-                operator.lt, before_growing_season_cumT
-            )
+            season_start_cumT = 170
             if crop.endswith("very early"):
-                mid_season_start_cumT = before_growing_season_cumT + 150
+                mid_season_start_cumT = season_start_cumT + 150
                 mid_season_end_cumT = mid_season_start_cumT + 1250
             elif crop.endswith("mid"):
-                mid_season_start_cumT = before_growing_season_cumT + 150
+                mid_season_start_cumT = season_start_cumT + 150
                 mid_season_end_cumT = mid_season_start_cumT + 1500
             elif crop.endswith("late"):
-                mid_season_start_cumT = before_growing_season_cumT + 200
+                mid_season_start_cumT = season_start_cumT + 200
                 mid_season_end_cumT = mid_season_start_cumT + 1700
             else:
                 print(f"! WARNING: requested crop {crop} not recognized; skipped")
@@ -650,6 +646,7 @@ def compute_phenology_variables(
             )
             continue
 
+        before_growing_season = Kc_condition_atom(operator.lt, season_start_cumT)
         after_mid_season_start = Kc_condition_atom(operator.ge, mid_season_start_cumT)
         before_mid_season_end = Kc_condition_atom(operator.le, mid_season_end_cumT)
         EGS_date = cumT[
