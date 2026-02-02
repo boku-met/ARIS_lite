@@ -264,19 +264,19 @@ def compute_phenology_variables(
     for crop in crops:
         if crop == "winter wheat":
             season_start_cumT = 51
-            mid_season_start_cumT = 461
+            mid_season_start_cumT = season_start_cumT + 461
             mid_season_end_cumT = mid_season_start_cumT + 535
             end_season_start_cumT = mid_season_end_cumT + 426
             cumT = (temperature - 5).clip(min=0).cumsum("time")
         elif crop == "spring barley":
             season_start_cumT = 99
-            mid_season_start_cumT = 532
+            mid_season_start_cumT = season_start_cumT + 532
             mid_season_end_cumT = mid_season_start_cumT + 450
             end_season_start_cumT = mid_season_end_cumT + 337
             cumT = (temperature - 5).clip(min=0).cumsum("time")
         elif crop == "maize":
             season_start_cumT = 156
-            mid_season_start_cumT = 476
+            mid_season_start_cumT = season_start_cumT + 476
             mid_season_end_cumT = mid_season_start_cumT + 1076
             end_season_start_cumT = mid_season_end_cumT + 53
             cumT = (temperature - 8).clip(min=0).cumsum("time")
@@ -286,9 +286,9 @@ def compute_phenology_variables(
             mid_season_end_cumT = mid_season_start_cumT + 661
             end_season_start_cumT = mid_season_end_cumT + 54
             cumT = (temperature - 10).clip(min=0).cumsum("time")
-        elif crop == "norm potato":
+        elif "norm potato" in crop:
             season_start_cumT = 259
-            mid_season_start_cumT = 501
+            mid_season_start_cumT = season_start_cumT + 501
             mid_season_end_cumT = mid_season_start_cumT + 728
             end_season_start_cumT = mid_season_end_cumT + 290
             cumT = (temperature - 5).clip(min=0).cumsum("time")
