@@ -101,7 +101,9 @@ def aris_1go(
         ]
     )
     ds = ds.assign(
-        waterstress=(ds.soil_depletion * 100 / ds.TAW).mean("layer").persist()
+        waterstress=(ds.soil_depletion * 100 / ds.TAW)
+        .sel(layer="top")  # in the original ARIS only top layer is used for stress
+        .persist()
     )
     ds = xr.merge([ds, calc_combined_stress(ds).persist()])
     ds = xr.merge(
