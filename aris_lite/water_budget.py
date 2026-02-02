@@ -163,30 +163,34 @@ def calc_soil_water(ds: xr.Dataset) -> xr.Dataset:
             "layer": ds.TAW.layer,
         },
     ).rename("evapotranspiration")
+    p__lower_lim, p__upper_lim = 0.1, 0.8
+    p_T = xr.DataArray(
+        [0.55, 0.55, 0.55, 0.5, 0.6, 0.35, 0.35, 0.35, 0.35],
+        coords={
+            "crop": [
+                "winter wheat",
+                "spring barley",
+                "maize",
+                "soybean",
+                "grassland",
+                "norm potato",
+                "wofost potato very early",
+                "wofost potato mid",
+                "wofost potato late",
+            ]
+        },
+    )
     for t in incoming_water.time[~incoming_water.time.dt.month.isin([1, 2, 12])].values:
         i = np.argwhere(t == incoming_water.time.values).flatten()[0]
-        p__lower_lim, p__upper_lim = 0.1, 0.8
-        p_T = xr.DataArray(
-            [0.55, 0.55, 0.55, 0.5, 0.6, 0.35, 0.35, 0.35, 0.35],
-            coords={
-                "crop": [
-                    "winter wheat",
-                    "spring barley",
-                    "maize",
-                    "soybean",
-                    "grassland",
-                    "norm potato",
-                    "wofost potato very early",
-                    "wofost potato mid",
-                    "wofost potato late",
-                ]
-            },
-        )
         p = (p_T + (0.04 * (5 - ETC.sel(time=t)))).clip(p__lower_lim, p__upper_lim)
-        Ks_i = ((1 - D_r.isel(time=i - 1) / ds.TAW).values / (1 - p)).clip(0, 1)
+        # raise Exception(f"{(1 - D_r.isel(time=i - 1) / ds.TAW) / (1 - p)}")
+        Ks_i = ((1 - D_r.isel(time=i - 1) / ds.TAW) / (1 - p)).clip(0, 1)
         ET[:, i] = (
-            ET0.sel(time=t) * Kc_plus_climEff.sel(time=t) * Ks_i
+            ETC.sel(time=t) * Ks_i
         )  # Ks_i has to be multiplied after Kc_... because of coord precedence
+        # if i == 92:
+        #     print(p, Ks_i, ET[:, i])
+        #     # raise
         top_shortage = (  # water in top layer before surplus is released
             D_r.isel(time=i - 1).squeeze().sel(layer="top")
             + ET.sel(time=t, layer="top")
