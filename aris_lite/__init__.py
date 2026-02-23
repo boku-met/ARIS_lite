@@ -14,25 +14,25 @@ __all__ = [
     "yield_expectation",
 ]
 
-from typing import Final, Literal
+from collections.abc import Iterable
+from typing import Literal, get_args
 import xarray as xr
 
-CROPS: Final = (
+type T_crop_names = Literal[
     "winter wheat",
     "spring barley",
     "maize",
     "soybean",
     "norm potato",
     "grassland",
-)
+]
 
-type T_crop_names = Literal[*CROPS]
-
+CROPS = [str(x) for x in get_args(T_crop_names)]
 
 
 def aris_1go(
     ds: xr.Dataset,
-    crops: list[T_crop_names],
+    crops: Iterable[T_crop_names],
 ):
     """
     Run the full ARIS-lite workflow on a single dataset.
@@ -49,7 +49,7 @@ def aris_1go(
     """
     from aris_lite.water_budget import calc_snow, calc_soil_water
     from aris_lite.phenology import compute_phenology_variables
-    from aris_lite.yield_expectation import calc_yield
+    # from aris_lite.yield_expectation import calc_yield
 
     def _load_resample_apply(ds, func, *args, **kwargs):
         return (
@@ -138,7 +138,7 @@ def cli():
         formatter_class=RawDescriptionHelpFormatter,
         description=dedent(
             """Calc all standard ARIS output in a single run
-            
+
             This routine is meant for small datasets. Note that intermediately large
             amounts of data are generated that can quickly exhaust your memory.
             """
@@ -153,7 +153,9 @@ def cli():
         default="3Gb",
         help='memory per worker, e.g. "5.67Gb"',
     )
-    parser.add_argument("crops", nargs="+", type=str, choices=T_crop_names, help="Path to input dataset")
+    parser.add_argument(
+        "crops", nargs="+", type=str, choices=CROPS, help="Path to input dataset"
+    )
     parser.add_argument("input", type=str, help="Path to input dataset")
     parser.add_argument("output", type=str, help="Path to output dataset")
     args = parser.parse_args()
@@ -166,7 +168,9 @@ def cli():
         )
         print(client.dashboard_link)
 
-    out_ds = aris_1go(xr.open_zarr(args.input).load().chunk(location=1))
+    out_ds = aris_1go(
+        xr.open_zarr(store=args.input).load().chunk(location=1), crops=CROPS
+    )
 
     out_ds.chunk(location=-1).to_zarr(args.output, mode="w")
 

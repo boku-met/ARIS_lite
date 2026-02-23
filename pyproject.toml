@@ -33,11 +33,9 @@ aris-calc-waterbudget = "aris_lite.water_budget:main_cli"
 aris-calc-pheno = "aris_lite.phenology:main_cli"
 aris-calc-yield = "aris_lite.yield_expectation:main_cli"
 
-[tool.ruff.lint]
-select = ["E", "F"]
-
 [dependency-groups]
 dev = [
+    "basedpyright>=1.38.1",
     "flit",
     "pigar",
     "ruff",
@@ -48,3 +46,11 @@ docs = [
     "sphinx-immaterial",
     "sphinxcontrib-bibtex",
 ]
+
+[tool.basedpyright]
+pythonVersion = "3.12"
+include = ["aris_lite"]
+typeCheckingMode = "standard"  # move to "strict" later
+
+[tool.ruff.lint]
+select = ["E", "F"]
