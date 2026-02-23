@@ -4,7 +4,7 @@ This package provides functions for simulating crop phenology, water budget, and
 expectation using environmental and crop-specific data.
 """
 
-__version__ = "0.2.0.dev1"
+__version__ = "0.3.0"
 
 __all__ = [
     "aris_1go",
@@ -14,18 +14,20 @@ __all__ = [
     "yield_expectation",
 ]
 
-from typing import Literal
+from typing import Final, Literal
 import xarray as xr
 
-T_crop_names = Literal[
+CROPS: Final = (
     "winter wheat",
     "spring barley",
     "maize",
+    "soybean",
+    "norm potato",
     "grassland",
-    "wofost potato very early",
-    "wofost potato mid",
-    "wofost potato late",
-]
+)
+
+type T_crop_names = Literal[*CROPS]
+
 
 
 def aris_1go(
@@ -47,7 +49,7 @@ def aris_1go(
     """
     from aris_lite.water_budget import calc_snow, calc_soil_water
     from aris_lite.phenology import compute_phenology_variables
-    from aris_lite.yield_expectation import calc_combined_stress, calc_yield
+    from aris_lite.yield_expectation import calc_yield
 
     def _load_resample_apply(ds, func, *args, **kwargs):
         return (
@@ -71,7 +73,7 @@ def aris_1go(
         [
             ds,
             (
-                xr.coding.calendar_ops.convert_calendar(
+                xr.coding.calendar_ops.convert_calendar(  # pyright: ignore[reportAttributeAccessIssue]
                     ds.air_temperature.where(~(ds.snowcover > 0)), "gregorian"
                 ).pipe(
                     _load_resample_apply,
@@ -105,13 +107,14 @@ def aris_1go(
         .sel(layer="top")  # in the original ARIS only top layer is used for stress
         .persist()
     )
-    ds = xr.merge([ds, calc_combined_stress(ds, 25).persist()])
-    ds = xr.merge(
-        [
-            ds,
-            ds.combined_stress.pipe(_load_resample_apply, calc_yield).persist(),
-        ]
-    )
+    # FIXME adopt to stress indicator refactoring
+    # ds = xr.merge([ds, calc_combined_stress(ds, 25).persist()])
+    # ds = xr.merge(
+    #     [
+    #         ds,
+    #         ds.combined_stress.pipe(_load_resample_apply, calc_yield).persist(),
+    #     ]
+    # )
     return ds.map(lambda da: da.astype("float32") if da.dtype.kind == "f" else da)
 
 
@@ -150,8 +153,9 @@ def cli():
         default="3Gb",
         help='memory per worker, e.g. "5.67Gb"',
     )
-    parser.add_argument("input", nargs=1, type=str, help="Path to input dataset")
-    parser.add_argument("output", nargs=1, type=str, help="Path to output dataset")
+    parser.add_argument("crops", nargs="+", type=str, choices=T_crop_names, help="Path to input dataset")
+    parser.add_argument("input", type=str, help="Path to input dataset")
+    parser.add_argument("output", type=str, help="Path to output dataset")
     args = parser.parse_args()
 
     if args.workers > 1:
@@ -162,9 +166,9 @@ def cli():
         )
         print(client.dashboard_link)
 
-    out_ds = aris_1go(xr.open_zarr(args.input[0]).load().chunk(location=1))
+    out_ds = aris_1go(xr.open_zarr(args.input).load().chunk(location=1))
 
-    out_ds.chunk(location=-1).to_zarr(args.output[0], mode="w")
+    out_ds.chunk(location=-1).to_zarr(args.output, mode="w")
 
 
 def extract_point_data(ds, locations):

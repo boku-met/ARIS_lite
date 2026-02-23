@@ -9,6 +9,7 @@ readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE.txt"]
 dynamic = ["version", "description"]
+requires-python = ">=3.12"
 dependencies= [
   "dask[complete]",
   "numpy",
@@ -16,6 +17,14 @@ dependencies= [
   "snowmaus",
   "xarray[accel,io,parallel]",
   "zarr>=3",
+]
+
+[project.optional-dependencies]
+docs = [
+  "myst-parser",
+  "sphinx",
+  "sphinx-immaterial",
+  "sphinxcontrib-bibtex",
 ]
 
 [project.scripts]
@@ -36,5 +45,6 @@ dev = [
 docs = [
     "myst-parser",
     "sphinx",
-    "sphinx-rtd-theme",
+    "sphinx-immaterial",
+    "sphinxcontrib-bibtex",
 ]
