@@ -4,7 +4,7 @@
 
 # ARIS_lite
 
-ARIS models plant growth based on environmental parameter. The model
+ARIS models plant growth based on environmental parameters. The model
 draws on the references at the bottom.
 
 ## 🌱 state
@@ -12,13 +12,16 @@ draws on the references at the bottom.
 The model has been validated against the orignal ARIS model. This is not
 a stable software - future changes may break your work, but I will try
 not to.
+All CLI entry points and high-level Python workflow functions (including
+the module-level `main*` functions) are currently in development,
+unstable, and may be temporarily broken between versions.
 
 ## 🪛 usage
 
-1. `python water_budget.py -m snow 2019 2020 2021 2022 2023`
-2. `python phenology.py`
-3. `python water_budget.py -m soil`
-4. `python yield_expectation.py`
+1. `aris-calc-waterbudget -m snow 2019 2020 2021 2022 2023`
+2. `aris-calc-pheno 2019 2020 2021 2022 2023`
+3. `aris-calc-waterbudget -m soil 2019 2020 2021 2022 2023`
+4. `aris-calc-yield -m both 2019 2020 2021 2022 2023`
 
 ## ✨ features
 

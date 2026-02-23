@@ -236,7 +236,7 @@ def main_soil_water(years: Iterable[int]):
         snow_ds = xr.open_zarr(
             f"../data/intermediate/snow_{year}.zarr", decode_coords="all"
         )
-        meteo_ds = xr.open_zarr(f"../data/input/{year}.zarr", decode_coords="all")
+        meteo_ds = xr.open_zarr(f"../data/reference/{year}", decode_coords="all")
         TAW = xr.open_dataarray("../data/input/soil_taw.nc", decode_coords="all")
         main_ds = xr.merge([pheno_ds, meteo_ds, TAW, snow_ds]).drop_vars(
             ["lambert_conformal_conic"]
@@ -280,7 +280,7 @@ def main_snow(years: Iterable[int]):
         if os.path.isdir(f"../data/intermediate/snow_{year}.zarr"):
             print(f"! WARNING: snow_{year}.zarr already exists. Skipping.")
             continue
-        main_ds = xr.open_zarr(f"../data/input/{year}.zarr", decode_coords="all")
+        main_ds = xr.open_zarr(f"../data/reference/{year}", decode_coords="all")
         if os.path.isdir(
             f"../data/intermediate/snow_{year - 1}.zarr"
         ) and "snowcover" in xr.open_zarr(f"../data/intermediate/snow_{year - 1}.zarr"):
@@ -422,13 +422,13 @@ def main_cli():
     if args.mode == "snow":
         print(
             "Continue by computing the crop coefficients (needed to calculate the "
-            "evapotranspiration later) by running\n\t`python phenology.py "
+            "evapotranspiration later) by running\n\t`aris-calc-pheno "
             "[year1 ...]`\n"
         )
     else:
         print(
-            "Continue by computing the expected yield by running\n\t`python "
-            "yield_expectation.py [year1 ...]`\n"
+            "Continue by computing the expected yield by running\n\t"
+            "`aris-calc-yield --mode both [year1 ...]`\n"
         )
 
 

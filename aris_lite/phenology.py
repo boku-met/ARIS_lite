@@ -770,7 +770,7 @@ def main(
             continue
         print("Calculating phenology variables for year", year, "and crops", crops)
         T2m = xr.open_zarr(
-            f"../data/input/{year}.zarr", decode_coords="all"
+            f"../data/reference/{year}", decode_coords="all"
         ).air_temperature
         if T2m.time.dt.calendar in [
             "noleap",
@@ -851,8 +851,8 @@ def main_cli():
 
     print("Sucessfully computed phenology related variables!\n")
     print(
-        "Continue by computing the soil water by running\n\t`python water_budget.py"
-        "-m soil [year1 ...]`\n"
+        "Continue by computing the soil water by running\n\t"
+        "`aris-calc-waterbudget --mode soil [year1 ...]`\n"
     )
 
 

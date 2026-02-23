@@ -29,11 +29,11 @@ In any case, first make sure your data is organized in Zarr stores with
 the correct variable names and with the correct units. The list below
 may be incomplete - in that case, refer to the source code. If not
 specified, the variables correspond to daily aggregates at 2 m above the
-surface, with temperatures in ˚C.
+surface, with temperatures in ``degC``.
 
-- ``air-temperature``: Average air temperature
-- ``max-air-temp``: Maximum air temperature
-- ``min-air-temp``: Maximum air temperature
+- ``air_temperature``: Average air temperature
+- ``max_air_temp``: Maximum air temperature
+- ``min_air_temp``: Minimum air temperature
 - ``rel_humidity``: Average relative humidity in %
 - ``min_rel_hum``: Minimum relative humidity in %
 - ``precipitation``: Total precipitation in mm water equivalent
@@ -44,12 +44,18 @@ Command-Line Usage
 ------------------
 
 The ``aris-1go`` entry point offers a convenient pipeline that runs all
-require steps in order. Use this with small datasets, e.g., for a number
+required steps in order. Use this with small datasets, e.g., for a number
 of point locations. Here's a basic example:
 
 .. code-block:: shell
 
-   aris-1go --input input.zarr --output output.zarr
+   aris-1go input.zarr output.zarr
+
+.. note::
+
+   All CLI entry points and high-level Python workflow functions
+   (including module-level ``main*`` functions) are in development,
+   unstable, and may be temporarily broken between versions.
 
 Other available CLIs:
 

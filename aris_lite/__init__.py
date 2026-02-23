@@ -105,7 +105,7 @@ def aris_1go(
         .sel(layer="top")  # in the original ARIS only top layer is used for stress
         .persist()
     )
-    ds = xr.merge([ds, calc_combined_stress(ds).persist()])
+    ds = xr.merge([ds, calc_combined_stress(ds, 25).persist()])
     ds = xr.merge(
         [
             ds,

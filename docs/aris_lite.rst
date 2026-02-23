@@ -1,6 +1,12 @@
 aris\_lite package
 ==================
 
+.. note::
+
+   All CLI entry points and high-level Python workflow functions
+   (including module-level ``main*`` functions) are in development,
+   unstable, and may be temporarily broken between versions.
+
 .. automodule:: aris_lite
    :members:
    :show-inheritance:
