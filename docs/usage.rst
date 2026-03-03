@@ -43,32 +43,49 @@ surface, with temperatures in ``degC``.
 Command-Line Usage
 ------------------
 
-The ``aris-1go`` entry point offers a convenient pipeline that runs all
-required steps in order. Use this with small datasets, e.g., for a number
-of point locations. Here's a basic example:
+The canonical CLI is now rooted at ``aris``.
+
+For in-memory runs on smaller datasets, use:
 
 .. code-block:: shell
 
-   aris-1go input.zarr output.zarr
+   aris 1go "winter wheat" "maize" input.zarr output.zarr
 
-.. note::
+For yearly staged processing, use ``aris calc`` subcommands:
 
-   All CLI entry points and high-level Python workflow functions
-   (including module-level ``main*`` functions) are in development,
-   unstable, and may be temporarily broken between versions.
+.. code-block:: shell
 
-Other available CLIs:
+   aris calc waterbudget --mode snow 2026 2027 2028
+   aris calc pheno 2026 2027 2028
+   aris calc waterbudget --mode soil 2026 2027 2028
+   aris calc yield --mode both 2026 2027 2028 \
+     --yield-max PATH --yield-intercept PATH --yield-params PATH
 
-- ``aris-calc-waterbudget``: Calculate water budget
-- ``aris-calc-pheno``: Calculate phenology
-- ``aris-calc-yield``: Calculate yield expectation
+Path conventions for staged calculations default to ``../data`` and can be
+changed with ``--base-dir``.
 
-For a large dataset, run them in the following order (e.g. years 2026 2027 2028):
+Legacy command migration
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. ``aris-calc-waterbudget --mode snow 2026 2027 2028``
-2. ``aris-calc-pheno 2026 2027 2028``
-3. ``aris-calc-waterbudget --mode soil 2026 2027 2028``
-4. ``aris-calc-yield --mode both 2026 2027 2028``
++----------------------------------+----------------------------------+
+| Legacy command                   | Canonical replacement            |
++==================================+==================================+
+| ``aris-1go``                     | ``aris 1go``                     |
++----------------------------------+----------------------------------+
+| ``aris-calc-waterbudget``        | ``aris calc waterbudget``        |
++----------------------------------+----------------------------------+
+| ``aris-calc-pheno``              | ``aris calc pheno``              |
++----------------------------------+----------------------------------+
+| ``aris-calc-yield``              | ``aris calc yield``              |
++----------------------------------+----------------------------------+
+
+Deprecation policy
+~~~~~~~~~~~~~~~~~~
+
+Legacy flat commands and legacy high-level module-level functions
+(``main*`` and ``cli`` aliases) remain available in ``0.3.x``, emit
+deprecation warnings, and will be removed in ``0.4.0``.
+
 
 API Usage
 ---------

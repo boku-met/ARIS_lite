@@ -12,16 +12,19 @@ draws on the references at the bottom.
 The model has been validated against the orignal ARIS model. This is not
 a stable software - future changes may break your work, but I will try
 not to.
-All CLI entry points and high-level Python workflow functions (including
-the module-level `main*` functions) are currently in development,
-unstable, and may be temporarily broken between versions.
+Canonical CLI namespace is now rooted at `aris`.
+Legacy flat commands and legacy module-level `main*`/`cli` functions are
+deprecated and will be removed in `0.4.0`.
 
 ## 🪛 usage
 
-1. `aris-calc-waterbudget -m snow 2019 2020 2021 2022 2023`
-2. `aris-calc-pheno 2019 2020 2021 2022 2023`
-3. `aris-calc-waterbudget -m soil 2019 2020 2021 2022 2023`
-4. `aris-calc-yield -m both 2019 2020 2021 2022 2023`
+1. `aris calc waterbudget -m snow 2019 2020 2021 2022 2023`
+2. `aris calc pheno 2019 2020 2021 2022 2023`
+3. `aris calc waterbudget -m soil 2019 2020 2021 2022 2023`
+4. `aris calc yield -m both 2019 2020 2021 2022 2023 --yield-max <PATH> --yield-intercept <PATH> --yield-params <PATH>`
+
+Optional compatibility (deprecated until `0.4.0`): `aris-1go`,
+`aris-calc-waterbudget`, `aris-calc-pheno`, `aris-calc-yield`.
 
 ## ✨ features
 
