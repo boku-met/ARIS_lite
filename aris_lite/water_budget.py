@@ -9,17 +9,29 @@ crop growth and yield estimation.
 """
 
 __all__ = [
+    "run_water_budget_snow",
+    "run_water_budget_soil",
+    "run_calc_waterbudget",
     "main_snow",
     "main_soil_water",
+    "main_cli",
     "calc_snow",
     "calc_soil_water",
 ]
 
 import dask.array as dask_arr
 import numpy as np
-import os
 import xarray as xr
 from typing import Iterable
+
+from aris_lite.deprecation import warn_legacy_python_api
+from aris_lite.paths import (
+    DEFAULT_BASE_DIR,
+    input_taw,
+    intermediate_snow,
+    intermediate_year,
+    reference_year,
+)
 
 import snowmaus
 
@@ -215,7 +227,10 @@ def calc_soil_water(ds: xr.Dataset) -> xr.Dataset:
     return xr.merge([ET, ETC.rename("evapo_ETC"), D_r])
 
 
-def main_soil_water(years: Iterable[int]):
+def run_water_budget_soil(
+    years: Iterable[int],
+    base_dir: str = str(DEFAULT_BASE_DIR),
+):
     """
     Load input data and write soil water and evapotranspiration results to Zarr store.
 
@@ -226,18 +241,21 @@ def main_soil_water(years: Iterable[int]):
     :type years: Iterable[int]
     """
     for year in years:
-        if os.path.isdir(f"../data/intermediate/{year}.zarr/soil_depletion"):
-            print(f"! WARNING: {year}.zarr/soil_depletion already exists. Skipping.")
+        yearly_intermediate = intermediate_year(year, base_dir=base_dir)
+        yearly_snow = intermediate_snow(year, base_dir=base_dir)
+        yearly_reference = reference_year(year, base_dir=base_dir)
+        taw_path = input_taw(base_dir=base_dir)
+        if (yearly_intermediate / "soil_depletion").exists():
+            print(
+                f"! WARNING: {yearly_intermediate}/soil_depletion already "
+                "exists. Skipping."
+            )
             continue
         print("Calculating soil water and evapotranspiration for year", year)
-        pheno_ds = xr.open_zarr(
-            f"../data/intermediate/{year}.zarr", decode_coords="all"
-        )
-        snow_ds = xr.open_zarr(
-            f"../data/intermediate/snow_{year}.zarr", decode_coords="all"
-        )
-        meteo_ds = xr.open_zarr(f"../data/reference/{year}", decode_coords="all")
-        TAW = xr.open_dataarray("../data/input/soil_taw.nc", decode_coords="all")
+        pheno_ds = xr.open_zarr(str(yearly_intermediate), decode_coords="all")
+        snow_ds = xr.open_zarr(str(yearly_snow), decode_coords="all")
+        meteo_ds = xr.open_zarr(str(yearly_reference), decode_coords="all")
+        TAW = xr.open_dataarray(str(taw_path), decode_coords="all")
         main_ds = xr.merge([pheno_ds, meteo_ds, TAW, snow_ds]).drop_vars(
             ["lambert_conformal_conic"]
         )
@@ -263,10 +281,13 @@ def main_soil_water(years: Iterable[int]):
                 ]
             ),
         )
-        D_r.drop_encoding().to_zarr(f"../data/intermediate/{year}.zarr", mode="a-")
+        D_r.drop_encoding().to_zarr(str(yearly_intermediate), mode="a-")
 
 
-def main_snow(years: Iterable[int]):
+def run_water_budget_snow(
+    years: Iterable[int],
+    base_dir: str = str(DEFAULT_BASE_DIR),
+):
     """
     Load input data and write snow-related results to Zarr store.
 
@@ -277,15 +298,19 @@ def main_snow(years: Iterable[int]):
     :type years: Iterable[int]
     """
     for year in years:
-        if os.path.isdir(f"../data/intermediate/snow_{year}.zarr"):
-            print(f"! WARNING: snow_{year}.zarr already exists. Skipping.")
+        yearly_snow = intermediate_snow(year, base_dir=base_dir)
+        previous_yearly_snow = intermediate_snow(year - 1, base_dir=base_dir)
+        yearly_reference = reference_year(year, base_dir=base_dir)
+
+        if yearly_snow.exists():
+            print(f"! WARNING: {yearly_snow} already exists. Skipping.")
             continue
-        main_ds = xr.open_zarr(f"../data/reference/{year}", decode_coords="all")
-        if os.path.isdir(
-            f"../data/intermediate/snow_{year - 1}.zarr"
-        ) and "snowcover" in xr.open_zarr(f"../data/intermediate/snow_{year - 1}.zarr"):
+        main_ds = xr.open_zarr(str(yearly_reference), decode_coords="all")
+        if previous_yearly_snow.exists() and "snowcover" in xr.open_zarr(
+            str(previous_yearly_snow)
+        ):
             main_ds["initial_snowcover"] = xr.open_zarr(
-                f"../data/intermediate/snow_{year - 1}.zarr"
+                str(previous_yearly_snow)
             ).snowcover.isel(time=-1)
             # next step is necessary! somehow this `xr.where` changes how the
             # data looks internally
@@ -319,10 +344,16 @@ def main_snow(years: Iterable[int]):
                     template.rename("snowcover"),
                 ]
             ),
-        ).drop_encoding().to_zarr(f"../data/intermediate/snow_{year}.zarr", mode="a")
+        ).drop_encoding().to_zarr(str(yearly_snow), mode="a")
 
 
-def main_cli():
+def run_calc_waterbudget(
+    years: Iterable[int],
+    mode: str = "auto",
+    workers: int = 4,
+    mem_per_worker: str = "2Gb",
+    base_dir: str = str(DEFAULT_BASE_DIR),
+):
     """
     Command-line interface for computing snow/melt or soil water and evapotranspiration.
 
@@ -336,77 +367,49 @@ def main_cli():
 
     :return: None
     """
-    import argparse
+    years = sorted(years)
+    mode = mode.lower()
 
-    parser = argparse.ArgumentParser(
-        description="computes either the snow/melt or the soil water "
-        "and evapotranspiration"
-    )
-    parser.add_argument(
-        "-m",
-        "--mode",
-        type=str,
-        choices=["snow", "soil", "auto"],
-        default="auto",
-        help="choose which part of the water budget to compute",
-    )
-    parser.add_argument(
-        "years",
-        type=int,
-        nargs="*",
-        default=[2020, 2021, 2023],
-        help="list years to compute",
-    )
-    parser.add_argument("--workers", type=int, default=4, help="number of dask workers")
-    parser.add_argument(
-        "--mem-per-worker",
-        type=str,
-        default="2Gb",
-        help='memory per worker, e.g. "5.67Gb"',
-    )
-    args = parser.parse_args()
-    args.years = sorted(args.years)
-
-    if args.mode == "auto":
+    if mode == "auto":
         if all(
-            os.path.isdir(f"../data/intermediate/snow_{year}.zarr")
-            for year in args.years
+            intermediate_snow(year, base_dir=base_dir).exists()
+            for year in years
         ):
             print(
                 "Snow related variables are present, assuming you mean to have the "
                 "soil part of the water budget computed"
             )
-            args.mode = "soil"
+            mode = "soil"
         else:
             print(
                 "Snow related variables are missing for year(s):",
                 ", ".join(
                     [
                         str(year)
-                        for year in args.years
-                        if not os.path.isdir(f"../data/intermediate/snow_{year}.zarr")
+                        for year in years
+                        if not intermediate_snow(year, base_dir=base_dir).exists()
                     ]
                 )
                 + ".",
                 "Computing these now.",
             )
-            args.mode = "snow"
+            mode = "snow"
 
     from dask.distributed import LocalCluster, Client
 
-    print(f"Starting dask ({args.workers} CPUs, each {args.mem_per_worker} RAM)")
+    print(f"Starting dask ({workers} CPUs, each {mem_per_worker} RAM)")
     client = Client(
         LocalCluster(
-            n_workers=args.workers, memory_limit=args.mem_per_worker, death_timeout=30
+            n_workers=workers, memory_limit=mem_per_worker, death_timeout=30
         )
     )
     print("... access the dashboard at", client.dashboard_link)
 
     try:
-        if args.mode == "snow":
-            main_snow(args.years)
+        if mode == "snow":
+            run_water_budget_snow(years=years, base_dir=base_dir)
         else:
-            main_soil_water(args.years)
+            run_water_budget_soil(years=years, base_dir=base_dir)
     except (FileNotFoundError,) as err:
         if str(err).startswith("Unable to find group"):
             print(
@@ -418,19 +421,54 @@ def main_cli():
         client.close()
         print("Closed dask client\n")
 
-    print(f"Sucessfully computed {args.mode} related variables!\n")
-    if args.mode == "snow":
+    print(f"Successfully computed {mode} related variables!\n")
+    if mode == "snow":
         print(
             "Continue by computing the crop coefficients (needed to calculate the "
-            "evapotranspiration later) by running\n\t`aris-calc-pheno "
+            "evapotranspiration later) by running\n\t`aris calc pheno "
             "[year1 ...]`\n"
         )
     else:
         print(
             "Continue by computing the expected yield by running\n\t"
-            "`aris-calc-yield --mode both [year1 ...]`\n"
+            "`aris calc yield --mode both [year1 ...]`\n"
         )
 
 
+def main_soil_water(
+    years: Iterable[int],
+    base_dir: str = str(DEFAULT_BASE_DIR),
+):
+    """Legacy alias for :func:`run_water_budget_soil`."""
+    warn_legacy_python_api(
+        "aris_lite.water_budget.main_soil_water",
+        "aris_lite.water_budget.run_water_budget_soil",
+    )
+    run_water_budget_soil(years=years, base_dir=base_dir)
+
+
+def main_snow(
+    years: Iterable[int],
+    base_dir: str = str(DEFAULT_BASE_DIR),
+):
+    """Legacy alias for :func:`run_water_budget_snow`."""
+    warn_legacy_python_api(
+        "aris_lite.water_budget.main_snow",
+        "aris_lite.water_budget.run_water_budget_snow",
+    )
+    run_water_budget_snow(years=years, base_dir=base_dir)
+
+
+def main_cli(argv: list[str] | None = None) -> int:
+    """Legacy CLI alias for `aris-calc-waterbudget`; use `aris calc waterbudget`."""
+    warn_legacy_python_api(
+        "aris_lite.water_budget.main_cli",
+        "aris_lite.cli.main:main_cli",
+    )
+    from aris_lite.cli.legacy_wrappers import legacy_waterbudget_cli
+
+    return legacy_waterbudget_cli(argv=argv, emit_warning=False)
+
+
 if __name__ == "__main__":
-    main_cli()
+    raise SystemExit(main_cli())

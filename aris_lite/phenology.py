@@ -8,15 +8,18 @@ for modeling crop growth, water use, and yield.
 """
 
 __all__ = [
+    "run_calc_pheno",
     "main",
+    "main_cli",
     "compute_phenology_variables",
 ]
 
 from aris_lite import T_crop_names
+from aris_lite.deprecation import warn_legacy_python_api
+from aris_lite.paths import DEFAULT_BASE_DIR, intermediate_year, reference_year
 from dask import array as dask_arr
 import numpy as np
 import operator
-import os
 import pandas as pd
 from typing import Iterable
 import xarray as xr
@@ -743,7 +746,7 @@ def compute_phenology_variables(
     return out
 
 
-def main(
+def _run_calc_pheno_years(
     years: Iterable[int],
     crops: Iterable[T_crop_names] = (
         "winter wheat",
@@ -751,6 +754,47 @@ def main(
         "maize",
         "grassland",
     ),
+    base_dir: str = str(DEFAULT_BASE_DIR),
+):
+    for year in years:
+        out_path = intermediate_year(year, base_dir=base_dir)
+        if out_path.exists():
+            print(f"! WARNING: {out_path} already exists. Skipping.")
+            continue
+        print("Calculating phenology variables for year", year, "and crops", crops)
+        T2m = xr.open_zarr(
+            str(reference_year(year, base_dir=base_dir)), decode_coords="all"
+        ).air_temperature
+        original_calendar = None
+        if T2m.time.dt.calendar in ["noleap"]:
+            original_calendar = T2m.time.dt.calendar
+            T2m = xr.coding.calendar_ops.convert_calendar(T2m, "gregorian")
+        template = xr.DataArray(
+            dask_arr.zeros(shape=(len(crops), *T2m.shape), dtype="f4"),
+            coords=T2m.expand_dims({"crop": crops}).coords,
+        ).chunk(dict(crop=-1, time=-1, x=41, y=37))
+        template = xr.merge(
+            [template.rename("Kc_factor"), template.rename("plant_height")]
+        )
+        result = T2m.map_blocks(
+            lambda x: compute_phenology_variables(x, crops), template=template
+        )
+        if original_calendar is not None:
+            result = xr.coding.calendar_ops.convert_calendar(result, original_calendar)
+        result.drop_encoding().to_zarr(str(out_path), mode="a-")
+
+
+def run_calc_pheno(
+    years: Iterable[int],
+    crops: Iterable[T_crop_names] = (
+        "winter wheat",
+        "spring barley",
+        "maize",
+        "grassland",
+    ),
+    workers: int = 4,
+    mem_per_worker: str = "3Gb",
+    base_dir: str = str(DEFAULT_BASE_DIR),
 ):
     """
     Load data, compute phenology variables, and save output for specified years.
@@ -764,35 +808,54 @@ def main(
                   "spring barley", "maize", "grassland").
     :type crops: Iterable, optional
     """
-    for year in years:
-        if os.path.isdir(f"../data/intermediate/{year}.zarr"):
-            print(f"! WARNING: {year}.zarr already exists. Skipping.")
-            continue
-        print("Calculating phenology variables for year", year, "and crops", crops)
-        T2m = xr.open_zarr(
-            f"../data/reference/{year}", decode_coords="all"
-        ).air_temperature
-        if T2m.time.dt.calendar in [
-            "noleap",
-        ]:
-            original_calendar = T2m.time.dt.calendar
-            T2m = xr.coding.calendar_ops.convert_calendar(T2m, "gregorian")
-        template = xr.DataArray(
-            dask_arr.zeros(shape=(len(crops), *T2m.shape), dtype="f4"),
-            coords=T2m.expand_dims({"crop": crops}).coords,
-        ).chunk(dict(crop=-1, time=-1, x=41, y=37))
-        template = xr.merge(
-            [template.rename("Kc_factor"), template.rename("plant_height")]
-        )
-        result = T2m.map_blocks(
-            lambda x: compute_phenology_variables(x, crops), template=template
-        )
-        if "original_calendar" in locals():
-            result = xr.coding.calendar_ops.convert_calendar(result, original_calendar)
-        result.drop_encoding().to_zarr(f"../data/intermediate/{year}.zarr", mode="a-")
+    years = sorted(years)
+
+    from dask.distributed import Client, LocalCluster
+
+    print("Starting dask")
+    client = Client(
+        LocalCluster(n_workers=workers, memory_limit=mem_per_worker, death_timeout=30)
+    )
+    print("... access the dashboard at", client.dashboard_link)
+
+    try:
+        _run_calc_pheno_years(years=years, crops=crops, base_dir=base_dir)
+    except (FileNotFoundError,) as err:
+        if str(err).startswith("Unable to find group"):
+            print(
+                "\n! ERROR: data missing. Verify that the necessary data are "
+                "available.\n"
+            )
+            raise
+    finally:
+        client.close()
+        print("Closed dask client\n")
+
+    print("Successfully computed phenology related variables!\n")
+    print(
+        "Continue by computing the soil water by running\n\t"
+        "`aris calc waterbudget --mode soil [year1 ...]`\n"
+    )
 
 
-def main_cli():
+def main(
+    years: Iterable[int],
+    crops: Iterable[T_crop_names] = (
+        "winter wheat",
+        "spring barley",
+        "maize",
+        "grassland",
+    ),
+    base_dir: str = str(DEFAULT_BASE_DIR),
+):
+    """Legacy alias for :func:`run_calc_pheno` yearly core."""
+    warn_legacy_python_api(
+        "aris_lite.phenology.main", "aris_lite.phenology.run_calc_pheno"
+    )
+    _run_calc_pheno_years(years=sorted(years), crops=crops, base_dir=base_dir)
+
+
+def main_cli(argv: list[str] | None = None) -> int:
     """
     Command-line interface for computing phenology variables.
 
@@ -806,55 +869,13 @@ def main_cli():
 
     :return: None
     """
-    import argparse
-
-    parser = argparse.ArgumentParser(description="computes stress and/or yield")
-    parser.add_argument(
-        "years",
-        type=int,
-        nargs="*",
-        default=[2020, 2021, 2023],
-        help="list years to compute",
+    warn_legacy_python_api(
+        "aris_lite.phenology.main_cli", "aris_lite.cli.main:main_cli"
     )
-    parser.add_argument("--workers", type=int, default=4, help="number of dask workers")
-    parser.add_argument(
-        "--mem-per-worker",
-        type=str,
-        default="3Gb",
-        help='memory per worker, e.g. "5.67Gb"',
-    )
-    args = parser.parse_args()
-    args.years = sorted(args.years)
+    from aris_lite.cli.legacy_wrappers import legacy_pheno_cli
 
-    from dask.distributed import LocalCluster, Client
-
-    print("Starting dask")
-    client = Client(
-        LocalCluster(
-            n_workers=args.workers, memory_limit=args.mem_per_worker, death_timeout=30
-        )
-    )
-    print("... access the dashboard at", client.dashboard_link)
-
-    try:
-        main(args.years)
-    except (FileNotFoundError,) as err:
-        if str(err).startswith("Unable to find group"):
-            print(
-                "\n! ERROR: data missing. Verify that the necessary data are "
-                "available.\n"
-            )
-            raise
-    finally:
-        client.close()
-        print("Closed dask client\n")
-
-    print("Sucessfully computed phenology related variables!\n")
-    print(
-        "Continue by computing the soil water by running\n\t"
-        "`aris-calc-waterbudget --mode soil [year1 ...]`\n"
-    )
+    return legacy_pheno_cli(argv=argv, emit_warning=False)
 
 
 if __name__ == "__main__":
-    main_cli()
+    raise SystemExit(main_cli())

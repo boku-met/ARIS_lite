@@ -28,10 +28,11 @@ docs = [
 ]
 
 [project.scripts]
-aris-1go = "aris_lite.__init__:cli"
-aris-calc-waterbudget = "aris_lite.water_budget:main_cli"
-aris-calc-pheno = "aris_lite.phenology:main_cli"
-aris-calc-yield = "aris_lite.yield_expectation:main_cli"
+aris = "aris_lite.cli.main:main_cli"
+aris-1go = "aris_lite.cli.legacy_wrappers:legacy_1go_cli"
+aris-calc-waterbudget = "aris_lite.cli.legacy_wrappers:legacy_waterbudget_cli"
+aris-calc-pheno = "aris_lite.cli.legacy_wrappers:legacy_pheno_cli"
+aris-calc-yield = "aris_lite.cli.legacy_wrappers:legacy_yield_cli"
 
 [dependency-groups]
 dev = [

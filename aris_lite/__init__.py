@@ -1,22 +1,23 @@
-"""Implementation of the ARIS(_lite) phenology model
-
-This package provides functions for simulating crop phenology, water budget, and yield
-expectation using environmental and crop-specific data.
-"""
+"""Implementation of the ARIS-lite model package."""
 
 __version__ = "0.3.0"
 
-__all__ = [
-    "aris_1go",
-    "extract_point_data",
-    "phenology",
-    "water_budget",
-    "yield_expectation",
-]
-
 from collections.abc import Iterable
-from typing import Literal, get_args
-import xarray as xr
+from typing import TYPE_CHECKING, Literal
+
+from aris_lite.deprecation import warn_legacy_python_api
+
+if TYPE_CHECKING:
+    import xarray as xr
+
+CROPS = [
+    "winter wheat",
+    "spring barley",
+    "maize",
+    "soybean",
+    "norm potato",
+    "grassland",
+]
 
 type T_crop_names = Literal[
     "winter wheat",
@@ -27,39 +28,31 @@ type T_crop_names = Literal[
     "grassland",
 ]
 
-CROPS = [str(x) for x in get_args(T_crop_names)]
 
-
-def aris_1go(
-    ds: xr.Dataset,
+def run_1go(
+    ds: "xr.Dataset",
     crops: Iterable[T_crop_names],
-):
+) -> "xr.Dataset":
     """
-    Run the full ARIS-lite workflow on a single dataset.
+    Run the in-memory 1go ARIS-lite workflow on a single dataset.
 
-    This function sequentially applies snow calculation, phenology computation,
-    soil water calculation, water stress, combined stress, and yield estimation
-    to the input dataset. It is intended for small datasets and returns a merged
-    xarray.Dataset with all computed variables.
-
-    :param ds: Input dataset containing meteorological and crop data.
-    :type ds: xr.Dataset
-    :return: Dataset with all ARIS-lite output variables.
-    :rtype: xr.Dataset
+    This routine computes snow, phenology, soil-water outputs, and top-layer
+    waterstress. It intentionally does not compute yield outputs.
     """
-    from aris_lite.water_budget import calc_snow, calc_soil_water
+    import xarray as xr
+
     from aris_lite.phenology import compute_phenology_variables
-    # from aris_lite.yield_expectation import calc_yield
+    from aris_lite.water_budget import calc_snow, calc_soil_water
 
-    def _load_resample_apply(ds, func, *args, **kwargs):
+    def _load_resample_apply(input_ds, func, *args, **kwargs):
         return (
-            ds.load()
+            input_ds.load()
             .resample(time="YE")
             .map(func, args=args, **kwargs)
-            .assign_coords(time=("time", ds.time.data))
+            .assign_coords(time=("time", input_ds.time.data))
         )
 
-    ds = xr.merge(
+    out = xr.merge(
         [
             ds,
             calc_snow(
@@ -69,12 +62,12 @@ def aris_1go(
             ).persist(),
         ]
     )
-    ds = xr.merge(
+    out = xr.merge(
         [
-            ds,
+            out,
             (
                 xr.coding.calendar_ops.convert_calendar(  # pyright: ignore[reportAttributeAccessIssue]
-                    ds.air_temperature.where(~(ds.snowcover > 0)), "gregorian"
+                    out.air_temperature.where(~(out.snowcover > 0)), "gregorian"
                 ).pipe(
                     _load_resample_apply,
                     compute_phenology_variables,
@@ -83,96 +76,56 @@ def aris_1go(
             ).persist(),
         ]
     )
-    ds = xr.merge(
+    out = xr.merge(
         [
-            ds,
-            ds.map_blocks(
+            out,
+            out.map_blocks(
                 _load_resample_apply,
                 args=(calc_soil_water,),
                 template=xr.Dataset(
                     {
-                        var: xr.zeros_like(ds.Kc_factor.broadcast_like(ds.TAW))
-                        .transpose(*ds.Kc_factor.dims, ...)
-                        .chunk(ds.chunks)
+                        var: xr.zeros_like(out.Kc_factor.broadcast_like(out.TAW))
+                        .transpose(*out.Kc_factor.dims, ...)
+                        .chunk(out.chunks)
                         for var in ["evapotranspiration", "evapo_ETC", "soil_depletion"]
                     }
                 ),
             )
-            .chunk(ds.chunks)
+            .chunk(out.chunks)
             .persist(),
         ]
     )
-    ds = ds.assign(
-        waterstress=(ds.soil_depletion * 100 / ds.TAW)
-        .sel(layer="top")  # in the original ARIS only top layer is used for stress
+    out = out.assign(
+        waterstress=(out.soil_depletion * 100 / out.TAW)
+        .sel(layer="top")
         .persist()
     )
-    # FIXME adopt to stress indicator refactoring
-    # ds = xr.merge([ds, calc_combined_stress(ds, 25).persist()])
-    # ds = xr.merge(
-    #     [
-    #         ds,
-    #         ds.combined_stress.pipe(_load_resample_apply, calc_yield).persist(),
-    #     ]
-    # )
-    return ds.map(lambda da: da.astype("float32") if da.dtype.kind == "f" else da)
+    return out.map(lambda da: da.astype("float32") if da.dtype.kind == "f" else da)
 
 
-def cli():
-    """
-    Command-line interface for running the full ARIS-lite workflow.
+def aris_1go(
+    ds: "xr.Dataset",
+    crops: Iterable[T_crop_names],
+) -> "xr.Dataset":
+    """Legacy alias for :func:`run_1go`."""
+    warn_legacy_python_api("aris_lite.aris_1go", "aris_lite.run_1go")
+    return run_1go(ds=ds, crops=crops)
 
-    Parses command-line arguments for input/output paths and Dask cluster configuration,
-    then runs the full workflow and writes the output dataset.
 
-    Usage:
-        aris-1go [--workers N] [--mem-per-worker SIZE] input.zarr output.zarr
+def main_cli(argv: list[str] | None = None) -> int:
+    """Legacy CLI alias for `aris-1go`; use `aris 1go`."""
+    warn_legacy_python_api("aris_lite.main_cli", "aris_lite.cli.main:main_cli")
+    from aris_lite.cli.legacy_wrappers import legacy_1go_cli
 
-    :return: None
-    """
-    from argparse import ArgumentParser, RawDescriptionHelpFormatter
-    from textwrap import dedent
+    return legacy_1go_cli(argv=argv, emit_warning=False)
 
-    parser = ArgumentParser(
-        prog="aris-1go",  # TODO add name
-        formatter_class=RawDescriptionHelpFormatter,
-        description=dedent(
-            """Calc all standard ARIS output in a single run
 
-            This routine is meant for small datasets. Note that intermediately large
-            amounts of data are generated that can quickly exhaust your memory.
-            """
-        ),
-    )
-    parser.add_argument(
-        "--workers", type=int, default=6, help="number of dask workers"
-    )  # TODO change default to 1
-    parser.add_argument(
-        "--mem-per-worker",
-        type=str,
-        default="3Gb",
-        help='memory per worker, e.g. "5.67Gb"',
-    )
-    parser.add_argument(
-        "crops", nargs="+", type=str, choices=CROPS, help="Path to input dataset"
-    )
-    parser.add_argument("input", type=str, help="Path to input dataset")
-    parser.add_argument("output", type=str, help="Path to output dataset")
-    args = parser.parse_args()
+def cli(argv: list[str] | None = None) -> int:
+    """Legacy CLI alias for `aris-1go`; use `aris 1go`."""
+    warn_legacy_python_api("aris_lite.cli", "aris_lite.cli.main:main_cli")
+    from aris_lite.cli.legacy_wrappers import legacy_1go_cli
 
-    if args.workers > 1:
-        from dask.distributed import Client, LocalCluster
-
-        client = Client(
-            LocalCluster(n_workers=args.workers, memory_limit=args.mem_per_worker)
-        )
-        print(client.dashboard_link)
-
-    out_ds = aris_1go(
-        xr.open_zarr(store=args.input).load().chunk(location=1), crops=CROPS
-    )
-
-    out_ds.chunk(location=-1).to_zarr(args.output, mode="w")
+    return legacy_1go_cli(argv=argv, emit_warning=False)
 
 
 def extract_point_data(ds, locations):
@@ -181,14 +134,9 @@ def extract_point_data(ds, locations):
 
     For each location provided, selects the nearest grid point in the dataset and
     concatenates the results along a new 'location' dimension.
-
-    :param ds: Input xarray.Dataset.
-    :type ds: xr.Dataset
-    :param locations: DataFrame with location names and coordinates.
-    :type locations: pd.DataFrame
-    :return: Dataset with data for each specified location.
-    :rtype: xr.Dataset
     """
+    import xarray as xr
+
     return (
         xr.concat(
             [
@@ -200,3 +148,14 @@ def extract_point_data(ds, locations):
         .chunk(location=-1)
         .transpose("time", ...)
     )
+
+
+__all__ = [
+    "CROPS",
+    "T_crop_names",
+    "run_1go",
+    "aris_1go",
+    "main_cli",
+    "cli",
+    "extract_point_data",
+]

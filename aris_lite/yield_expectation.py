@@ -10,16 +10,30 @@ into crop-wise yield depression.
 """
 
 __all__ = [
+    "run_calc_stresses",
+    "run_calc_yield",
     "main_heat_drought_compound_stress",
     "main_yield",
+    "main_cli",
+    "calc_stresses",
     "calc_heat_drought_compound_stress",
     "calc_yield",
 ]
 
-import os
+from pathlib import Path
 from typing import Iterable
 import xarray as xr
 import numpy as np
+
+from aris_lite.deprecation import warn_legacy_python_api
+from aris_lite.paths import (
+    DEFAULT_BASE_DIR,
+    input_taw,
+    intermediate_stress,
+    intermediate_year,
+    output_year,
+    reference_year,
+)
 
 
 def set_heat_drought_compound_stress_meta(da: xr.DataArray) -> xr.DataArray:
@@ -210,33 +224,34 @@ def calc_stresses(ds: xr.Dataset) -> xr.DataArray:
     ).to_dataarray(dim="stressor", name="stresses")
 
 
-def main_heat_drought_compound_stress(years: Iterable[int]):
+def run_calc_stresses(
+    years: Iterable[int],
+    base_dir: str = str(DEFAULT_BASE_DIR),
+):
     """
-    Compute and persist yearly compound heat-drought stress datasets.
+    Compute and persist yearly heat-drought compound stress datasets.
 
-    For each year, this routine loads intermediate water-balance outputs and
-    reference temperature, derives water stress, computes the crop-specific
-    compound stress with ``map_blocks``, and writes the result to
-    ``../data/intermediate/CSI_<year>.zarr``.
-
-    :param years: List of years to compute combined stress for.
-    :type years: Iterable[int]
+    The output store path follows ``intermediate/CSI_<year>.zarr`` under
+    ``base_dir``.
     """
-    # FIXME update with added stressors and rename CSI
-    TAW = xr.open_dataarray("../data/input/soil_taw.nc", decode_coords="all")
+    taw = xr.open_dataarray(str(input_taw(base_dir=base_dir)), decode_coords="all")
     for year in years:
-        if os.path.isdir(f"../data/intermediate/CSI_{year}.zarr"):
-            print(f"! WARNING: CSI_{year}.zarr already exists. Skipping.")
+        stress_store = intermediate_stress(year, base_dir=base_dir)
+        yearly_intermediate = intermediate_year(year, base_dir=base_dir)
+        yearly_reference = reference_year(year, base_dir=base_dir)
+
+        if stress_store.exists():
+            print(f"! WARNING: {stress_store} already exists. Skipping.")
             continue
         print("Calculating stress index for year", year)
-        ds = xr.open_zarr(f"../data/intermediate/{year}.zarr", decode_coords="all")
-        if not hasattr(TAW, "chunks"):
-            TAW = TAW.chunk({k: ds.chunks[k] for k in TAW.dims})
+        ds = xr.open_zarr(str(yearly_intermediate), decode_coords="all")
+        if not hasattr(taw, "chunks"):
+            taw = taw.chunk({k: ds.chunks[k] for k in taw.dims})
         waterstress = (
-            (ds.soil_depletion * 100 / TAW).mean("layer").rename("waterstress")
+            (ds.soil_depletion * 100 / taw).sel(layer="top").rename("waterstress")
         )
         max_air_temp = xr.open_zarr(
-            f"../data/reference/{year}", decode_coords="all"
+            str(yearly_reference), decode_coords="all"
         ).max_air_temp.astype("f4")
         data_collection = xr.merge(
             [waterstress, max_air_temp, ds.Kc_factor.astype("f4")]
@@ -247,7 +262,7 @@ def main_heat_drought_compound_stress(years: Iterable[int]):
                 template=data_collection.Kc_factor.astype("f4"),
             )
         )
-        csi.drop_encoding().to_zarr(f"../data/intermediate/CSI_{year}.zarr", mode="a-")
+        csi.drop_encoding().to_zarr(str(stress_store), mode="a-")
 
 
 def set_yield_meta(da: xr.DataArray) -> xr.DataArray:
@@ -350,43 +365,117 @@ def calc_yield(
     )
 
 
-def main_yield(years: Iterable[int]):
-    """
-    Compute and persist yearly yield outputs for selected years.
+def _open_dataarray(path: str) -> xr.DataArray:
+    path_obj = Path(path)
+    if path_obj.is_dir() or path_obj.suffix == ".zarr":
+        opened = xr.open_zarr(str(path_obj), decode_coords="all")
+    else:
+        try:
+            return xr.open_dataarray(str(path_obj), decode_coords="all")
+        except ValueError:
+            opened = xr.open_dataset(str(path_obj), decode_coords="all")
+    if isinstance(opened, xr.DataArray):
+        return opened
+    if len(opened.data_vars) == 1:
+        return opened[next(iter(opened.data_vars))]
+    raise ValueError(
+        f"Could not infer a single DataArray from '{path_obj}'. "
+        "Provide a path containing exactly one data variable."
+    )
 
-    For each year, this routine loads stress inputs, applies ``calc_yield``, and
-    stores the result at ``../data/output/<year>.zarr``.
 
-    :param years: List of years to compute yield expectations for.
-    :type years: Iterable[int]
-    """
+def _validate_yield_paths(
+    *,
+    mode: str,
+    yield_max_path: str | None,
+    yield_intercept_path: str | None,
+    yield_params_path: str | None,
+):
+    if mode not in {"yield", "both"}:
+        return
+    missing = [
+        flag
+        for flag, value in [
+            ("--yield-max", yield_max_path),
+            ("--yield-intercept", yield_intercept_path),
+            ("--yield-params", yield_params_path),
+        ]
+        if not value
+    ]
+    if missing:
+        raise ValueError(
+            "Yield mode requires explicit parameter paths. Missing flags: "
+            + ", ".join(missing)
+        )
+
+
+def run_yield_depression(
+    years: Iterable[int],
+    *,
+    yield_max_path: str,
+    yield_intercept_path: str,
+    yield_params_path: str,
+    temporal_mask_path: str | None = None,
+    grass_cut_numbers_path: str | None = None,
+    base_dir: str = str(DEFAULT_BASE_DIR),
+):
+    """Compute and persist yearly yield_depression from stored stress inputs."""
+    yield_max = _open_dataarray(yield_max_path)
+    yield_intercept = _open_dataarray(yield_intercept_path)
+    params = _open_dataarray(yield_params_path)
+    temporal_mask = (
+        _open_dataarray(temporal_mask_path)
+        if temporal_mask_path is not None
+        else xr.DataArray(True)
+    )
+    grass_cut_numbers = (
+        _open_dataarray(grass_cut_numbers_path)
+        if grass_cut_numbers_path is not None
+        else None
+    )
+
     for year in years:
-        if os.path.isdir(f"../data/output/{year}.zarr"):
-            print(f"! WARNING: {year}.zarr already exists. Skipping.")
+        yearly_output = output_year(year, base_dir=base_dir)
+        yearly_stress = intermediate_stress(year, base_dir=base_dir)
+
+        if yearly_output.exists():
+            print(f"! WARNING: {yearly_output} already exists. Skipping.")
             continue
-        print("Calculating yield expectation for year", year)
+        print("Calculating yield depression for year", year)
         csi = xr.open_zarr(
-            f"../data/intermediate/CSI_{year}.zarr", decode_coords="all"
+            str(yearly_stress), decode_coords="all"
         ).heat_drought_compound_stress
-        yield_expectation = (
-            csi.map_blocks(calc_yield, template=csi.isel(time=0).drop_vars("time"))
-            .rename("yield_expectation")
-            .assign_attrs(
-                dict(
-                    unit="t/ha",
-                    long_name="Expected yield in tonnes per hectare",
-                    description="The expected yield given a certain combined stress "
-                    "which is crop specific and bases on water availability and heat "
-                    "above defined thresholds.",
-                )
-            )
+        stress_data = (
+            csi
+            if "stressor" in csi.dims
+            else csi.expand_dims(stressor=["heat_drought_compound_stress"])
         )
-        yield_expectation.drop_encoding().to_zarr(
-            f"../data/output/{year}.zarr", mode="a-"
+        yield_depression = calc_yield(
+            stress_data=stress_data,
+            yield_max=yield_max,
+            yield_intercept=yield_intercept,
+            params=params,
+            temporal_mask=temporal_mask,
+            grass_cut_numbers=grass_cut_numbers,
+        )
+        yield_depression.to_dataset(name=yield_depression.name).drop_encoding().to_zarr(
+            str(yearly_output),
+            mode="a-",
         )
 
 
-def main_cli():
+def run_calc_yield(
+    years: Iterable[int],
+    mode: str = "auto",
+    workers: int = 4,
+    mem_per_worker: str = "1Gb",
+    base_dir: str = str(DEFAULT_BASE_DIR),
+    yield_max_path: str | None = None,
+    yield_intercept_path: str | None = None,
+    yield_params_path: str | None = None,
+    temporal_mask_path: str | None = None,
+    grass_cut_numbers_path: str | None = None,
+):
     """
     Command-line interface for computing stress indices and/or yield expectations.
 
@@ -400,73 +489,63 @@ def main_cli():
 
     :return: None
     """
-    import argparse
+    years = sorted(years)
+    mode = mode.lower()
 
-    parser = argparse.ArgumentParser(description="computes stress and/or yield")
-    parser.add_argument(
-        "-m",
-        "--mode",
-        type=str,
-        choices=["stress", "yield", "both", "auto"],
-        default="auto",
-        help="choose whether to compute stress, yield, or both",
-    )
-    parser.add_argument(
-        "years",
-        type=int,
-        nargs="*",
-        default=[2020, 2021, 2023],
-        help="list years to compute",
-    )
-    parser.add_argument("--workers", type=int, default=4, help="number of dask workers")
-    parser.add_argument(
-        "--mem-per-worker",
-        type=str,
-        default="1Gb",
-        help='memory per worker, e.g. "5.67Gb"',
-    )
-    args = parser.parse_args()
-    args.years = sorted(args.years)
-
-    if args.mode == "auto":
+    if mode == "auto":
         if all(
-            os.path.isdir(f"../data/intermediate/CSI_{year}.zarr")
-            for year in args.years
+            intermediate_stress(year, base_dir=base_dir).exists()
+            for year in years
         ):
             print(
                 "Stress index is present, assuming you want to have the yield "
-                "expectations computed."
+                "depression computed."
             )
-            args.mode = "yield"
+            mode = "yield"
         else:
             print(
                 "Stress index is missing for year(s):",
                 ", ".join(
                     [
                         str(year)
-                        for year in args.years
-                        if not os.path.isdir(f"../data/intermediate/CSI_{year}.zarr")
+                        for year in years
+                        if not intermediate_stress(year, base_dir=base_dir).exists()
                     ]
                 )
-                + ".",
-                "Computing these first before estimating the yield.",
+                + ". Computing these first before estimating yield depression.",
             )
-            args.mode = "both"
+            mode = "both"
+
+    _validate_yield_paths(
+        mode=mode,
+        yield_max_path=yield_max_path,
+        yield_intercept_path=yield_intercept_path,
+        yield_params_path=yield_params_path,
+    )
 
     from dask.distributed import LocalCluster, Client
 
-    print("Starting dask")
+    print(f"Starting dask ({workers} CPUs, each {mem_per_worker} RAM)")
     client = Client(
         LocalCluster(
-            n_workers=args.workers, memory_limit=args.mem_per_worker, death_timeout=30
+            n_workers=workers, memory_limit=mem_per_worker, death_timeout=30
         )
     )
     print("... access the dashboard at", client.dashboard_link)
 
     try:
-        if args.mode in ["stress", "both"]:
-            main_heat_drought_compound_stress(args.years)
-        main_yield(args.years)
+        if mode in {"stress", "both"}:
+            run_calc_stresses(years=years, base_dir=base_dir)
+        if mode in {"yield", "both"}:
+            run_yield_depression(
+                years=years,
+                yield_max_path=str(yield_max_path),
+                yield_intercept_path=str(yield_intercept_path),
+                yield_params_path=str(yield_params_path),
+                temporal_mask_path=temporal_mask_path,
+                grass_cut_numbers_path=grass_cut_numbers_path,
+                base_dir=base_dir,
+            )
     except (FileNotFoundError,) as err:
         if str(err).startswith("Unable to find group"):
             print(
@@ -478,8 +557,63 @@ def main_cli():
         client.close()
         print("Closed dask client\n")
 
-    print(f"Sucessfully computed {args.mode} related variables!\n")
+    print(f"Successfully computed {mode} related variables!\n")
+
+
+def main_heat_drought_compound_stress(
+    years: Iterable[int],
+    base_dir: str = str(DEFAULT_BASE_DIR),
+):
+    """Legacy alias for :func:`run_calc_stresses`."""
+    warn_legacy_python_api(
+        "aris_lite.yield_expectation.main_heat_drought_compound_stress",
+        "aris_lite.yield_expectation.run_calc_stresses",
+    )
+    run_calc_stresses(years=years, base_dir=base_dir)
+
+
+def main_yield(
+    years: Iterable[int],
+    *,
+    yield_max_path: str | None = None,
+    yield_intercept_path: str | None = None,
+    yield_params_path: str | None = None,
+    temporal_mask_path: str | None = None,
+    grass_cut_numbers_path: str | None = None,
+    base_dir: str = str(DEFAULT_BASE_DIR),
+):
+    """Legacy alias for :func:`run_yield_depression`."""
+    warn_legacy_python_api(
+        "aris_lite.yield_expectation.main_yield",
+        "aris_lite.yield_expectation.run_calc_yield",
+    )
+    _validate_yield_paths(
+        mode="yield",
+        yield_max_path=yield_max_path,
+        yield_intercept_path=yield_intercept_path,
+        yield_params_path=yield_params_path,
+    )
+    run_yield_depression(
+        years=years,
+        yield_max_path=str(yield_max_path),
+        yield_intercept_path=str(yield_intercept_path),
+        yield_params_path=str(yield_params_path),
+        temporal_mask_path=temporal_mask_path,
+        grass_cut_numbers_path=grass_cut_numbers_path,
+        base_dir=base_dir,
+    )
+
+
+def main_cli(argv: list[str] | None = None) -> int:
+    """Legacy CLI alias for `aris-calc-yield`; use `aris calc yield`."""
+    warn_legacy_python_api(
+        "aris_lite.yield_expectation.main_cli",
+        "aris_lite.cli.main:main_cli",
+    )
+    from aris_lite.cli.legacy_wrappers import legacy_yield_cli
+
+    return legacy_yield_cli(argv=argv, emit_warning=False)
 
 
 if __name__ == "__main__":
-    main_cli()
+    raise SystemExit(main_cli())
