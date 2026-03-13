@@ -2,14 +2,14 @@
 ![GitHub top language](https://img.shields.io/github/languages/top/j-haacker/aris_lite)
 ![GitHub License](https://img.shields.io/github/license/j-haacker/aris_lite)
 
-# ARIS_lite
+# ARIS-lite
 
 ARIS models plant growth based on environmental parameters. The model
 draws on the references at the bottom.
 
 ## 🌱 state
 
-The model has been validated against the orignal ARIS model. This is not
+The model has been validated against the original ARIS model. This is not
 a stable software - future changes may break your work, but I will try
 not to.
 Canonical CLI namespace is now rooted at `aris`.
@@ -18,23 +18,31 @@ deprecated and will be removed in `0.4.0`.
 
 ## 🪛 usage
 
+Small datasets (in-memory):
+1. `aris 1go "winter wheat" "maize" input.zarr output.zarr`
+
+Yearly staged processing:
 1. `aris calc waterbudget -m snow 2019 2020 2021 2022 2023`
 2. `aris calc pheno 2019 2020 2021 2022 2023`
 3. `aris calc waterbudget -m soil 2019 2020 2021 2022 2023`
 4. `aris calc yield -m both 2019 2020 2021 2022 2023 --yield-max <PATH> --yield-intercept <PATH> --yield-params <PATH>`
+
+Notes:
+- yearly path conventions default to `../data` and can be changed via `--base-dir`
+- yield mode requires explicit parameter inputs (`--yield-max`, `--yield-intercept`, `--yield-params`)
 
 Optional compatibility (deprecated until `0.4.0`): `aris-1go`,
 `aris-calc-waterbudget`, `aris-calc-pheno`, `aris-calc-yield`.
 
 ## ✨ features
 
-- calculate water up-take coefficients ("Kc factors") for Winter Wheat,
-    Spring Barley, Maize, and Grassland based on the daily air surface
-    temperature
+- calculate water up-take coefficients ("Kc factors") for winter wheat,
+    spring barley, maize, soybean, norm potato, and grassland based on
+    daily air surface temperature
 - calculate soil water content and evapotranspiration
 - compute daily crop-specific stress index based on maximum surface air
     temperature and soil water saturation
-- estimate yield expectations based on stress index
+- estimate crop-specific yield depression (%) from stress indicators
 
 ## 📑 API documentation
 
@@ -46,13 +54,14 @@ Optional compatibility (deprecated until `0.4.0`): `aris-1go`,
 - meteorological data
 - soil water capacity data
 
-## 🐛 known issues
+## ⚠️ limitations
 
 - hard-coded observable names, e.g. "max_air_temp"
+- stressor-yield depression relation needs to be provided
 
 ## 💸 funding
 
-The implementation of ARIS_lite in Python, this repository, is funded by
+The implementation of ARIS-lite in Python, this repository, is funded by
 the Austrian Research Promotion Agency (FFG, www.ffg.at) as part of
 CropShift.
 

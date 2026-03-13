@@ -4,14 +4,14 @@ Usage Guide
 Overview
 --------
 
-This guide explains how to use the ARIS_lite package to compute plant
+This guide explains how to use the ARIS-lite package to compute plant
 stress indicators from modelling the soil water balance using
 meteorological data.
 
 Main Components
 ---------------
 
-ARIS_lite consists of the following modules:
+ARIS-lite consists of the following modules:
 
 - ``water_budget.py``: Handles soil water balance calculations
 - ``phenology.py``: Implements phenological models
@@ -20,7 +20,7 @@ ARIS_lite consists of the following modules:
 Basic Usage
 -----------
 
-To use ARIS_lite, you can either:
+To use ARIS-lite, you can either:
 
 1. Use the command-line interfaces (CLIs) provided by the package
 2. Import and use the functions programmatically
@@ -90,7 +90,7 @@ deprecation warnings, and will be removed in ``0.4.0``.
 API Usage
 ---------
 
-You can also use ARIS_lite in your own Python routines. After installation, you can:
+You can also use ARIS-lite in your own Python routines. After installation, you can:
 
 .. code-block:: python
 

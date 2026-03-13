@@ -4,7 +4,7 @@ Installation Guide
 Overview
 --------
 
-To install ARIS_lite, you currently can use pip or uv. The package has
+To install ARIS-lite, you currently can use pip or uv. The package has
 been tested with Python 3.13.
 
 Installation
@@ -18,7 +18,7 @@ Set up a project directory, open a terminal, and do
 
    uv venv
    source .venv/bin/activate
-   uv pip install git+https://github.com/j-haacker/ARIS_lite.git
+   uv pip install git+https://github.com/j-haacker/aris_lite.git
 
 Advantages:
 
@@ -30,12 +30,12 @@ Advantages:
 
 .. code-block:: shell
 
-   pip install git+https://github.com/j-haacker/ARIS_lite.git
+   pip install git+https://github.com/j-haacker/aris_lite.git
 
 Dependencies
 -------------
 
-ARIS_lite requires the following packages:
+ARIS-lite requires the following packages:
 
 - ``dask[complete]``
 - ``numpy``
@@ -51,14 +51,14 @@ Troubleshooting
 ---------------
 
 If you encounter any issues during installation or while using
-ARIS_lite, please check the project's GitHub repository for known issues
+ARIS-lite, please check the project's GitHub repository for known issues
 and solutions.
 
 Next Steps
 ---------
 
 Once installed, you can proceed to the usage documentation to learn how
-to use ARIS_lite in your projects:
+to use ARIS-lite in your projects:
 
 .. toctree::
    :maxdepth: 1

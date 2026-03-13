@@ -1,10 +1,10 @@
-Welcome to ARIS_lite's Documentation!
+Welcome to ARIS-lite's Documentation!
 =====================================
 
 Overview
 --------
 
-ARIS_lite is a Python framework designed to compute plant stress indicators from meteorological data and model soil water balance. The package provides tools for:
+ARIS-lite is a Python framework designed to compute plant stress indicators from meteorological data and model soil water balance. The package provides tools for:
 
 - Processing meteorological input data
 - Modeling soil water balance
@@ -30,7 +30,7 @@ Key Limitations
 Getting Started
 ---------------
 
-To learn more about using ARIS_lite, please refer to the following sections:
+To learn more about using ARIS-lite, please refer to the following sections:
 
 .. toctree::
    :maxdepth: 1
