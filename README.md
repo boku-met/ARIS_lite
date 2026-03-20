@@ -1,6 +1,7 @@
 ![GitHub Tag](https://img.shields.io/github/v/tag/j-haacker/aris_lite)
 ![GitHub top language](https://img.shields.io/github/languages/top/j-haacker/aris_lite)
 ![GitHub License](https://img.shields.io/github/license/j-haacker/aris_lite)
+[![DOI](https://zenodo.org/badge/872427702.svg)](https://doi.org/10.5281/zenodo.19134721)
 
 # ARIS-lite
 
@@ -76,7 +77,7 @@ APA:
 
 Haacker, J. (2026). *ARIS-lite: Agricultural Risk Information System model in
 Python* (Version 0.3.0) [Computer software]. Zenodo.
-https://doi.org/10.5281/zenodo.<RECORD_ID>
+https://doi.org/10.5281/zenodo.19134722
 
 BibTeX:
 
@@ -87,12 +88,10 @@ BibTeX:
   version = {0.3.0},
   year    = {2026},
   publisher = {Zenodo},
-  doi     = {10.5281/zenodo.<RECORD_ID>},
-  url     = {https://doi.org/10.5281/zenodo.<RECORD_ID>}
+  doi     = {10.5281/zenodo.19134722},
+  url     = {https://doi.org/10.5281/zenodo.19134722}
 }
 ```
-
-Replace `<RECORD_ID>` with the actual Zenodo record id after publication.
 
 ## 📚 references
 
