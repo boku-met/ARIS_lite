@@ -70,18 +70,42 @@ CropShift.
 alt="Logo FFG" style="width:15rem;">
 </a>
 
+## 📖 citation
+
+APA:
+
+Haacker, J. (2026). *ARIS-lite: Agricultural Risk Information System model in
+Python* (Version 0.3.0) [Computer software]. Zenodo.
+https://doi.org/10.5281/zenodo.<RECORD_ID>
+
+BibTeX:
+
+```bibtex
+@software{haacker_2026_aris_lite,
+  author  = {Haacker, Jan},
+  title   = {ARIS-lite: Agricultural Risk Information System model in Python},
+  version = {0.3.0},
+  year    = {2026},
+  publisher = {Zenodo},
+  doi     = {10.5281/zenodo.<RECORD_ID>},
+  url     = {https://doi.org/10.5281/zenodo.<RECORD_ID>}
+}
+```
+
+Replace `<RECORD_ID>` with the actual Zenodo record id after publication.
+
 ## 📚 references
 
-\[1\] Allen, R. G. (Ed.). (2000). Crop evapotranspiration: Guidelines
-    for computing crop water requirements (repr). Food and
-    Agriculture Organization of the United Nations.  
-\[2\] Eitzinger, J., Daneu, V., Kubu, G., Thaler, S., Trnka, M.,
-    Schaumberger, A., Schneider, S., & Tran, T. M. A. (2024). Grid based
-    monitoring and forecasting system of cropping conditions and risks
-    by agrometeorological indicators in Austria – Agricultural Risk
-    Information System ARIS. Climate Services, 34, 1.
-    <https://doi.org/10.1016/j.cliser.2024.100478>.  
-\[3\] Schaumberger, A. (2011). Räumliche Modelle zur Vegetations- und
-    Ertragsdynamik im Wirtschaftsgrünland [Dissertation, Graz University
-    of Technology].
-    <https://repository.tugraz.at/publications/npc97-y3058>.  
+1. Allen, R. G. (Ed.). (2000). Crop evapotranspiration: Guidelines
+   for computing crop water requirements (repr). Food and
+   Agriculture Organization of the United Nations.
+2. Eitzinger, J., Daneu, V., Kubu, G., Thaler, S., Trnka, M.,
+   Schaumberger, A., Schneider, S., & Tran, T. M. A. (2024). Grid based
+   monitoring and forecasting system of cropping conditions and risks
+   by agrometeorological indicators in Austria – Agricultural Risk
+   Information System ARIS. Climate Services, 34, 1.
+   <https://doi.org/10.1016/j.cliser.2024.100478>.
+3. Schaumberger, A. (2011). Räumliche Modelle zur Vegetations- und
+   Ertragsdynamik im Wirtschaftsgrünland [Dissertation, Graz University
+   of Technology].
+   <https://repository.tugraz.at/publications/npc97-y3058>.
