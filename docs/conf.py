@@ -9,8 +9,8 @@ from pathlib import Path
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "ARIS_lite"
-copyright = "2024, Jan Haacker"
+project = "ARIS-lite"
+copyright = "2024-2025, Jan Haacker"
 author = "Jan Haacker"
 # version = (
 #     subprun(
@@ -39,9 +39,11 @@ extensions = [
     "sphinx.ext.viewcode",
     "myst_parser",
     "sphinx_immaterial",
+    "sphinxcontrib.bibtex",
     # "sphinx.ext.linkcode",
     # 'sphinx.ext.napoleon',
 ]
+bibtex_bibfiles = ["refs.bib"]
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
@@ -53,7 +55,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 html_theme = "sphinx_immaterial"
 html_static_path = ["_static"]
 html_theme_options = {
-    "repo_url": "https://github.com/boku-met/ARIS_lite",
+    "repo_url": "https://github.com/boku-met/aris_lite",
     "palette": [
         {
             "media": "(prefers-color-scheme)",
@@ -115,7 +117,7 @@ sys.path.insert(0, str(Path("..", "aris_lite").resolve()))
 #         anchor = "#L%d" % get_func_line_number(filename, info["fullname"])
 #     else:
 #         anchor = ""
-#     return "https://github.com/j-haacker/ARIS_lite/blob/%s/%s.py%s" % (
+#     return "https://github.com/j-haacker/aris_lite/blob/%s/%s.py%s" % (
 #         git_hash,
 #         filename,
 #         anchor,

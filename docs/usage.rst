@@ -4,14 +4,14 @@ Usage Guide
 Overview
 --------
 
-This guide explains how to use the ARIS_lite package to compute plant
+This guide explains how to use the ARIS-lite package to compute plant
 stress indicators from modelling the soil water balance using
 meteorological data.
 
 Main Components
 ---------------
 
-ARIS_lite consists of the following modules:
+ARIS-lite consists of the following modules:
 
 - ``water_budget.py``: Handles soil water balance calculations
 - ``phenology.py``: Implements phenological models
@@ -20,7 +20,7 @@ ARIS_lite consists of the following modules:
 Basic Usage
 -----------
 
-To use ARIS_lite, you can either:
+To use ARIS-lite, you can either:
 
 1. Use the command-line interfaces (CLIs) provided by the package
 2. Import and use the functions programmatically
@@ -29,11 +29,11 @@ In any case, first make sure your data is organized in Zarr stores with
 the correct variable names and with the correct units. The list below
 may be incomplete - in that case, refer to the source code. If not
 specified, the variables correspond to daily aggregates at 2 m above the
-surface, with temperatures in ˚C.
+surface, with temperatures in ``degC``.
 
-- ``air-temperature``: Average air temperature
-- ``max-air-temp``: Maximum air temperature
-- ``min-air-temp``: Maximum air temperature
+- ``air_temperature``: Average air temperature
+- ``max_air_temp``: Maximum air temperature
+- ``min_air_temp``: Minimum air temperature
 - ``rel_humidity``: Average relative humidity in %
 - ``min_rel_hum``: Minimum relative humidity in %
 - ``precipitation``: Total precipitation in mm water equivalent
@@ -43,31 +43,54 @@ surface, with temperatures in ˚C.
 Command-Line Usage
 ------------------
 
-The ``aris-1go`` entry point offers a convenient pipeline that runs all
-require steps in order. Use this with small datasets, e.g., for a number
-of point locations. Here's a basic example:
+The canonical CLI is now rooted at ``aris``.
+
+For in-memory runs on smaller datasets, use:
 
 .. code-block:: shell
 
-   aris-1go --input input.zarr --output output.zarr
+   aris 1go "winter wheat" "maize" input.zarr output.zarr
 
-Other available CLIs:
+For yearly staged processing, use ``aris calc`` subcommands:
 
-- ``aris-calc-waterbudget``: Calculate water budget
-- ``aris-calc-pheno``: Calculate phenology
-- ``aris-calc-yield``: Calculate yield expectation
+.. code-block:: shell
 
-For a large dataset, run them in the following order (e.g. years 2026 2027 2028):
+   aris calc waterbudget --mode snow 2026 2027 2028
+   aris calc pheno 2026 2027 2028
+   aris calc waterbudget --mode soil 2026 2027 2028
+   aris calc yield --mode both 2026 2027 2028 \
+     --yield-max PATH --yield-intercept PATH --yield-params PATH
 
-1. ``aris-calc-waterbudget --mode snow 2026 2027 2028``
-2. ``aris-calc-pheno 2026 2027 2028``
-3. ``aris-calc-waterbudget --mode soil 2026 2027 2028``
-4. ``aris-calc-yield --mode both 2026 2027 2028``
+Path conventions for staged calculations default to ``../data`` and can be
+changed with ``--base-dir``.
+
+Legacy command migration
+~~~~~~~~~~~~~~~~~~~~~~~~
+
++----------------------------------+----------------------------------+
+| Legacy command                   | Canonical replacement            |
++==================================+==================================+
+| ``aris-1go``                     | ``aris 1go``                     |
++----------------------------------+----------------------------------+
+| ``aris-calc-waterbudget``        | ``aris calc waterbudget``        |
++----------------------------------+----------------------------------+
+| ``aris-calc-pheno``              | ``aris calc pheno``              |
++----------------------------------+----------------------------------+
+| ``aris-calc-yield``              | ``aris calc yield``              |
++----------------------------------+----------------------------------+
+
+Deprecation policy
+~~~~~~~~~~~~~~~~~~
+
+Legacy flat commands and legacy high-level module-level functions
+(``main*`` and ``cli`` aliases) remain available in ``0.3.x``, emit
+deprecation warnings, and will be removed in ``0.4.0``.
+
 
 API Usage
 ---------
 
-You can also use ARIS_lite in your own Python routines. After installation, you can:
+You can also use ARIS-lite in your own Python routines. After installation, you can:
 
 .. code-block:: python
 

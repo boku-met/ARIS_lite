@@ -9,6 +9,7 @@ readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE.txt"]
 dynamic = ["version", "description"]
+requires-python = ">=3.12"
 dependencies= [
   "dask[complete]",
   "numpy",
@@ -18,17 +19,24 @@ dependencies= [
   "zarr>=3",
 ]
 
-[project.scripts]
-aris-1go = "aris_lite.__init__:cli"
-aris-calc-waterbudget = "aris_lite.water_budget:main_cli"
-aris-calc-pheno = "aris_lite.phenology:main_cli"
-aris-calc-yield = "aris_lite.yield_expectation:main_cli"
+[project.optional-dependencies]
+docs = [
+  "myst-parser",
+  "sphinx",
+  "sphinx-immaterial",
+  "sphinxcontrib-bibtex",
+]
 
-[tool.ruff.lint]
-select = ["E", "F"]
+[project.scripts]
+aris = "aris_lite.cli.main:main_cli"
+aris-1go = "aris_lite.cli.legacy_wrappers:legacy_1go_cli"
+aris-calc-waterbudget = "aris_lite.cli.legacy_wrappers:legacy_waterbudget_cli"
+aris-calc-pheno = "aris_lite.cli.legacy_wrappers:legacy_pheno_cli"
+aris-calc-yield = "aris_lite.cli.legacy_wrappers:legacy_yield_cli"
 
 [dependency-groups]
 dev = [
+    "basedpyright>=1.38.1",
     "flit",
     "pigar",
     "ruff",
@@ -36,5 +44,14 @@ dev = [
 docs = [
     "myst-parser",
     "sphinx",
-    "sphinx-rtd-theme",
+    "sphinx-immaterial",
+    "sphinxcontrib-bibtex",
 ]
+
+[tool.basedpyright]
+pythonVersion = "3.12"
+include = ["aris_lite"]
+typeCheckingMode = "standard"  # move to "strict" later
+
+[tool.ruff.lint]
+select = ["E", "F"]

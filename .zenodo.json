@@ -1,0 +1,31 @@
+{
+  "title": "ARIS-lite: Agricultural Risk Information System model in Python",
+  "upload_type": "software",
+  "description": "ARIS-lite is a Python implementation of the Agricultural Risk Information System (ARIS) workflow for agrometeorological crop-risk indicators. It includes water budget, phenology, stress, and yield-depression calculations, with both in-memory and staged yearly CLI workflows.",
+  "creators": [
+    {
+      "name": "Haacker, Jan"
+    }
+  ],
+  "access_right": "open",
+  "license": "MIT",
+  "version": "0.3.0",
+  "language": "eng",
+  "keywords": [
+    "agrometeorology",
+    "crop modeling",
+    "phenology",
+    "evapotranspiration",
+    "drought stress",
+    "yield depression",
+    "xarray",
+    "zarr"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/boku-met/aris_lite",
+      "relation": "isSupplementTo",
+      "resource_type": "software"
+    }
+  ]
+}
